@@ -41,6 +41,8 @@ function TweetData(responseItem) {
     this.text = responseItem.full_text || responseItem.text;
     this.truncated = responseItem.truncated;
     this.createdAt = responseItem.created_at;
+    this.favoriteCount = responseItem.favorite_count;
+    this.retweetCount = responseItem.retweet_count;
     this.media = [];
 
     (responseItem.media || []).forEach(function(media){
