@@ -10,14 +10,18 @@ var config = {
 firebase.initializeApp(config);
 var database = firebase.database();
 function leaderboardPull(){
-	console.log(moment().startOf('day').format("YYMMDD"));
-	var leaderboardAllTime = firebase.database().ref('leaderboards/alltime');
-	leaderboardAllTime.on('value',function(snapshot){
+	dateStr = moment().startOf('day').format("YYMMDD");
+	console.log(dateStr)
+	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime');
+	leaderboardAllTime.once('value').then(function(snapshot){
 		console.log(snapshot.val())
 	})
-	var leaderboardAllTime = firebase.database().ref('leaderboards/');
-	leaderboardAllTime.on('value',function(snapshot){
+	var leaderboardToday = firebase.database().ref('leaderboard/'+dateStr);
+	leaderboardToday.once('value').then(function(snapshot){
 		console.log(snapshot.val())
+		for (i in snapshot.val()){
+			console.log(i+": "+snapshot.val()[i])
+		}
 	})
 }
 leaderboardPull();
