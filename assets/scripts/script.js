@@ -38,7 +38,7 @@ TwitterReader.prototype.fetchTweets = function fetchTweets(username, tweetCount)
 function TweetData(responseItem) {
     this.username = responseItem.user.screen_name;
     this.name = responseItem.user.name;
-    this.text = responseItem.text;
+    this.text = responseItem.full_text || responseItem.text;
     this.truncated = responseItem.truncated;
     this.createdAt = responseItem.created_at;
     this.media = [];
@@ -52,9 +52,10 @@ function TweetData(responseItem) {
     }, this);
 }
 
+// Test code
 $(document).ready(function() {
     var tweeter = new TwitterReader();
-    tweeter.fetchTweets("realDonaldTrump", 2)
+    tweeter.fetchTweets("realDonaldTrump", 10)
     .then(function(tweets){
         console.log(tweets);
     }).catch(function(error){
