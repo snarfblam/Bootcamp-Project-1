@@ -74,8 +74,8 @@ function OAuthUtility() {
 
             }
             // The signed-in user info.
-            this.user = result.user;
-            this.credential = result.credental;
+            self.user = result.user;
+            self.credential = result.credental;
         }).catch(function (error) {
             // Handle Errors here.
             var errorCode = error.code;
