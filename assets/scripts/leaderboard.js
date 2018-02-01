@@ -10,20 +10,20 @@ var config = {
 firebase.initializeApp(config);
 var database = firebase.database();
 function leaderboardPull(){
-	dateStr = moment().startOf('day').format("YYMMDD");
+	var dateStr = moment().startOf('day').format("YYMMDD");
 	console.log(dateStr)
-	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime').orderByValue();
+	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime').orderByChild("value");
 	leaderboardAllTime.once('value').then(function(snapshot){
 		console.log("All Time Leaders:")
 		for (var i in snapshot.val()){
-			console.log(i + ": "+snapshot.val()[i])
+			console.log(i + ": "+snapshot.val()[i]["value"])
 		}
 	})
-	var leaderboardToday = firebase.database().ref('leaderboard/'+dateStr).orderByValue();
+	var leaderboardToday = firebase.database().ref('leaderboard/'+dateStr).orderByChild("value");
 	leaderboardToday.once('value').then(function(snapshot){
 		console.log("Today's Leaders:")
 		for (i in snapshot.val()){
-			console.log(i+": "+snapshot.val()[i])
+			console.log(i+": "+snapshot.val()[i]["value"])
 		}
 	})
 }
