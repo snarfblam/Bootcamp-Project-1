@@ -60,10 +60,11 @@ function OAuthUtility() {
     this.provider = new firebase.auth.GoogleAuthProvider();
 }
 {
+    /** Returns a promise that resolves when authentication succeeds or fails */
     OAuthUtility.prototype.authenticate = function authenticate() {
         var self = this;
 
-        firebase.auth().getRedirectResult().then(function (result) {
+        return firebase.auth().getRedirectResult().then(function (result) {
             if (result.credential) {
                 // This gives you a Google Access Token. You can use it to access the Google API.
                 var token = result.credential.accessToken;
@@ -73,7 +74,8 @@ function OAuthUtility() {
 
             }
             // The signed-in user info.
-            var user = result.user;
+            this.user = result.user;
+            this.credential = result.credental;
         }).catch(function (error) {
             // Handle Errors here.
             var errorCode = error.code;
@@ -97,6 +99,7 @@ $(document).ready(function () {
     //         console.log(error);
     //     });
     // Initialize Firebase
+
     var config = {
         apiKey: "AIzaSyBl7_O3pchKuUbj5TEBAcoOOpAlV-4RDRE",
         authDomain: "bcs-whosaidit.firebaseapp.com",
@@ -107,7 +110,11 @@ $(document).ready(function () {
     };
     firebase.initializeApp(config);
     var auth = new OAuthUtility();
-    auth.authenticate();
+    auth.authenticate()
+        .then(function () {
+            $(document.body).append($("<img>").attr("src", "https://robohash.org/" + auth.user.displayName));
+        });
+
 
     //document.write(JSON.stringify())
 });
