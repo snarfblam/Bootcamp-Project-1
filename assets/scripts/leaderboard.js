@@ -12,13 +12,16 @@ var database = firebase.database();
 function leaderboardPull(){
 	dateStr = moment().startOf('day').format("YYMMDD");
 	console.log(dateStr)
-	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime');
+	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime').orderByValue();
 	leaderboardAllTime.once('value').then(function(snapshot){
-		console.log(snapshot.val())
+		console.log("All Time Leaders:")
+		for (var i in snapshot.val()){
+			console.log(i + ": "+snapshot.val()[i])
+		}
 	})
-	var leaderboardToday = firebase.database().ref('leaderboard/'+dateStr);
+	var leaderboardToday = firebase.database().ref('leaderboard/'+dateStr).orderByValue();
 	leaderboardToday.once('value').then(function(snapshot){
-		console.log(snapshot.val())
+		console.log("Today's Leaders:")
 		for (i in snapshot.val()){
 			console.log(i+": "+snapshot.val()[i])
 		}
