@@ -1,0 +1,84 @@
+<!DOCTYPE>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Bootcamp-Project-1</title>
+
+	<!-- Compiled and minified CSS -->
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+	<link rel="stylesheet" type="text/css" href="assets/css/style.css">
+</head>
+<body>
+
+<div class = "container">
+
+
+	<header>
+		<h1 class="grey lighten-1 center-align">Who Twote It? </h1> </header>
+		<div class = "row">
+			 <div class="col s12 m8 l3">
+			<img src ="assets/images/sillhouette.gif" >
+			</div>
+			 <div class="col s12 m4 l3">
+			<div id= twitterQuote>QUOTE</div>
+			<br>
+			<div id = "multipleChoiceAnswers">ANSWERS</div>
+			</div>
+		</div>
+
+			<div id = "currentScoreBoard"></div>
+			<ul class="collection">
+			<div class="row">
+				<div class="col s6">
+				<li class="collection-item avatar">
+					<i class="material-icons circle blue"></i>
+					<span class="player1">Player 1</span>
+					<p id="score1">Score<br>
+					</p>   
+				</li>
+				</div>
+				<div class="col s6">
+				<li class="collection-item avatar">
+					<i class="material-icons circle"></i>
+					<span class="player2">Player 2</span>
+					<p id="score2">Score <br>
+					</p>
+				</li>
+			</div>
+			</div>
+			<div class="row">
+				<div class="col s6">
+				<li class="collection-item avatar">
+					<i class="material-icons circle green"></i>
+					<span class="player3">Player 3</span>
+					<p id="score3">Score <br>
+					</p>
+				</li>
+			</div>
+			<div class="col s6">
+				<li class="collection-item avatar">
+					<i class="material-icons circle red"></i>
+					<span class="player4">Player 4</span>
+					<p id ="score4">Score <br>
+
+					</p>
+			</div>
+				</li>
+				</ul>
+		
+  		<footer class="page-footer grey lighten-1">
+          <div class="container">
+            <div class="row">
+              <div class="col l6 s12">
+                <h5 class="timer black-text">Timer:</h5>
+              </div>
+              <div class="col l4 offset-l2 s12">
+                  <a class="black-text" href="#!">Leaderboard</a>      
+              </div>
+            </div>
+		
+		</div>
+	</footer>
+	</body>
+	</html>
