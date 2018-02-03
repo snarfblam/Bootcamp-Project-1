@@ -17,7 +17,7 @@ function TwitterReader() {
             crossDomain: true,
             dataType: 'jsonp',
         }
-        
+
         var isHttps = (location.protocol === 'https:');
         var ajaxUrl = (isHttps ? "https" : "http") + this.proxyUrl;
 
@@ -140,6 +140,8 @@ function DbCommunicator(autoAuth) {
     this.nodes.requests.on("child_added", this.on_requests_childAdded.bind(this));
     this.nodes.events.on("child_added", this.on_events_childAdded.bind(this));
     this.nodes.chatMessages.on("child_added", this.on_chatMessages_childAdded.bind(this));
+    this.nodes.ping.on("child_added", this.on_ping_childAdded.bind(this));
+    this.nodes.pong.on("child_added", this.on_pong_childAdded.bind(this));
 
     /** Firebase user uid */
     this.userID = null;
@@ -172,13 +174,18 @@ function DbCommunicator(autoAuth) {
 
         this.nodes.events.push(event);
     }
-    DbCommunicator.prototype.sendChatMessage = function(text) {
+    DbCommunicator.prototype.sendChatMessage = function (text) {
         var data = {
             UID: this.userID,
             message: text,
             timestamp: firebase.database.ServerValue.TIMESTAMP,
         }
         this.nodes.chatMessages.push(data);
+    }
+    /** Returns a promise that resolves */ // left off here
+    DbCommunicator.prototype.sendPing = function(user) {
+        var data = {user: user};
+        this.nodes.ping.push(data);
     }
     DbCommunicator.prototype.on_requests_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
@@ -198,7 +205,42 @@ function DbCommunicator(autoAuth) {
         var data = childSnapshot.val();
         this.chatMessages.raise("received", data);
     }
+    DbCommunicator.prototype.on_pingMessages_childAdded = function (childSnapshot) {
+        var data = childSnapshot.val();
+    }
+    DbCommunicator.prototype.on_pongMessages_childAdded = function (childSnapshot) {
+        var data = childSnapshot.val();
+    }
+    DbCommunicator.prototype.pingPromise = function(userID, timeout) {
+        var self = this;
+
+        return $.when(function(){
+            var def = $.Deferred();
+
+        });
+        
+
+    }
 }
+
+/** Implements game server logic. Only the host browser utilizes this class. 
+ * @constructor */
+function TwoteServer() {
+
+}
+{
+    TwoteServer.performHostCheck = function (dbComm) {
+        var x = new DbCommunicator();
+        x.nodes.host.once("value", function(snap){
+            var hostData = snap.val();
+            if(hostData) {
+                // need to ping host
+            }
+        });
+    }
+}
+
+
 
 /** Implements Client<->database and server<->database communication 
  *  @constructor */
@@ -269,17 +311,21 @@ $(document).ready(function () {
     });
     //document.write(JSON.stringify())
 
-    comm.requests.on({test: function(args){
-        console.log("REQUEST - ", args);
-    }});
-    comm.events.on({test2: function(args){
-        console.log("EVENT - ", args);
-    }});
-    comm.chatMessages.on("received", function(args){
+    comm.requests.on({
+        test: function (args) {
+            console.log("REQUEST - ", args);
+        }
+    });
+    comm.events.on({
+        test2: function (args) {
+            console.log("EVENT - ", args);
+        }
+    });
+    comm.chatMessages.on("received", function (args) {
         console.log("CHAT - ", args);
     });
 
-    comm.sendEvent("test2", {abc: "123"});
-    comm.sendRequest("test", {"123": "abc"});
+    comm.sendEvent("test2", { abc: "123" });
+    comm.sendRequest("test", { "123": "abc" });
     comm.sendChatMessage("herp derp");
 });
