@@ -58,6 +58,7 @@ function TweetData(responseItem) {
 
 function OAuthUtility() {
     this.provider = new firebase.auth.GoogleAuthProvider();
+    this.user = null;
 }
 {
     /** Returns a promise that resolves when authentication succeeds or fails.
@@ -94,6 +95,8 @@ function OAuthUtility() {
 /** Implements Client<->database and server<->database communication 
  *  @constructor */
 function DbCommunicator(autoAuth) {
+    var self = this;
+
     var config = {
         apiKey: "AIzaSyBl7_O3pchKuUbj5TEBAcoOOpAlV-4RDRE",
         authDomain: "bcs-whosaidit.firebaseapp.com",
@@ -102,7 +105,7 @@ function DbCommunicator(autoAuth) {
         storageBucket: "bcs-whosaidit.appspot.com",
         messagingSenderId: "736508559692"
     };
-    /** firebase.app.App object */ 
+    /** firebase.app.App object */
     this.app = firebase.initializeApp(config);
     this.database = firebase.database();
 
@@ -122,8 +125,14 @@ function DbCommunicator(autoAuth) {
     this.auth = new OAuthUtility();
     /** Resolves when the communitcator has authenticated */
     this.authPromise = null;
-    if(autoAuth) {
+    if (autoAuth) {
         this.authPromise = this.auth.authenticate();
+
+        this.authPromise.then(function (result) {
+            this.user = self.auth.user;
+        }).catch(function (err) {
+            alert("todo: handle this error");
+        });
     }
 }
 
@@ -139,21 +148,21 @@ function EventObject() {
     /** Invokes all event handlers associated with the specified event */
     EventObject.prototype.raise = function (eventName, args) {
         var self = this;
-        handlers.forEach(function(handler) {
+        handlers.forEach(function (handler) {
             var handlerFunc = handler[eventName];
-            if(handlerFunc) {
+            if (handlerFunc) {
                 handlerFunc.call(handlerContext || self, args);
             }
         });
     };
 
     /** Associates an event handler with this event source */
-    EventObject.prototype.on = function(handlerCollection_or_name, handler_if_name) {
+    EventObject.prototype.on = function (handlerCollection_or_name, handler_if_name) {
         // in the case of .on("event", handler), we turn it into on({event: handler});
-        if(typeof handlerCollection_or_name == "string") {
+        if (typeof handlerCollection_or_name == "string") {
             var newHandler = {};
             newHandler[handlerCollection_or_name] = handler_if_name;
-        } 
+        }
 
         this.handlers.push(handlerCollection_or_name);
     };
@@ -186,6 +195,12 @@ $(document).ready(function () {
     //     });
 
     var comm = new DbCommunicator(true);
-
+    comm.authPromise.then(function (result) {
+        console.log(result);
+        //console.log(comm.)
+        this.comm = comm;
+    }).catch(function (error) {
+        console.log(error);
+    });
     //document.write(JSON.stringify())
 });
