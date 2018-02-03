@@ -133,8 +133,8 @@ function DbCommunicator(autoAuth) {
         var auth_promise = this.auth.authenticate();
         
         this.authPromise = auth_promise.then(function (result) {
-            this.user = self.auth.user;
-            this.userID = self.auth.user.uid;
+            self.user = self.auth.user;
+            self.userID = self.auth.user.uid;
         }).catch(function (err) {
             alert("todo: handle this error");
         });
