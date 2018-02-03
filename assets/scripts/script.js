@@ -122,14 +122,19 @@ function DbCommunicator(autoAuth) {
         pong: this.database.ref("pong"),
     };
 
+    /** Firebase user uid */
+    this.userID = null;
+    /** OAuth user data */
+    this.user = null;
     this.auth = new OAuthUtility();
     /** Resolves when the communitcator has authenticated */
     this.authPromise = null;
     if (autoAuth) {
-        this.authPromise = this.auth.authenticate();
-
-        this.authPromise.then(function (result) {
+        var auth_promise = this.auth.authenticate();
+        
+        this.authPromise = auth_promise.then(function (result) {
             this.user = self.auth.user;
+            this.userID = self.auth.user.uid;
         }).catch(function (err) {
             alert("todo: handle this error");
         });
@@ -196,7 +201,7 @@ $(document).ready(function () {
 
     var comm = new DbCommunicator(true);
     comm.authPromise.then(function (result) {
-        console.log(result);
+        console.log(comm.user);
         //console.log(comm.)
         this.comm = comm;
     }).catch(function (error) {
