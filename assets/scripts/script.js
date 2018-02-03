@@ -5,7 +5,7 @@ function TwitterReader() {
 {
 
     /** URL of the twitter API proxy */
-    TwitterReader.prototype.proxyUrl = "http://snarfblam.com/twote/";
+    TwitterReader.prototype.proxyUrl = "://snarfblam.com/twote/";
 
     /** Returns a promise that resolves when the specified tweets are retrieved. */
     TwitterReader.prototype.fetchTweets = function fetchTweets(username, tweetCount) {
@@ -17,7 +17,10 @@ function TwitterReader() {
             crossDomain: true,
             dataType: 'jsonp',
         }
-        var ajaxUrl = this.proxyUrl;
+        
+        var isHttps = (location.protocol === 'https:');
+        var ajaxUrl = (isHttps ? "https" : "http") + this.proxyUrl;
+
         ajaxUrl += "?" + $.param(config);
 
         return $.ajax({
@@ -56,6 +59,7 @@ function TweetData(responseItem) {
     }, this);
 }
 
+/** Performs OAuth operation */
 function OAuthUtility() {
     this.provider = new firebase.auth.GoogleAuthProvider();
     this.user = null;
