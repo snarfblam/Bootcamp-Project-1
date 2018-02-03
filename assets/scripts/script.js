@@ -109,18 +109,33 @@ function DbCommunicator(autoAuth) {
     this.app = firebase.initializeApp(config);
     this.database = firebase.database();
 
+    /** Raises events when a request is received. E.g. the 'playerGuessed'
+     * message will raise the 'playerGuessed' event.
+     */
+    this.requests = new EventObject();
+    /** Raises events when an event is received. E.g. the 'playerGuessed'
+     * message will raise the 'playerGuessed' event.
+     */
+    this.events = new EventObject();
+    /** Raises the 'received' message when a chat message is received */
+    this.chatMessages = new EventObject();
+
     this.nodes = {
         leaderboard: this.database.ref("leaderboard"),
-        players: this.database.ref("players"),
+        players: this.database.ref("users-active"),
         waitlist: this.database.ref("waitlist"),
-        chatMessages: this.database.ref("chatMessages"),
+        chatMessages: this.database.ref("chat"),
         //currentRound: this.database.ref("currentRound"),
-        requests: this.database.ref("currentRound/requests"),
-        events: this.database.ref("currentRound/events"),
+        requests: this.database.ref("current-round/requests"),
+        events: this.database.ref("current-round/events"),
         host: this.database.ref("host"),
         ping: this.database.ref("ping"),
         pong: this.database.ref("pong"),
     };
+
+    this.nodes.requests.on("child_added", this.on_requests_childAdded.bind(this));
+    this.nodes.events.on("child_added", this.on_events_childAdded.bind(this));
+    this.nodes.chatMessages.on("child_added", this.on_chatMessages_childAdded.bind(this));
 
     /** Firebase user uid */
     this.userID = null;
@@ -131,13 +146,53 @@ function DbCommunicator(autoAuth) {
     this.authPromise = null;
     if (autoAuth) {
         var auth_promise = this.auth.authenticate();
-        
+
         this.authPromise = auth_promise.then(function (result) {
             self.user = self.auth.user;
             self.userID = self.auth.user.uid;
         }).catch(function (err) {
             alert("todo: handle this error");
         });
+    }
+}
+{
+    DbCommunicator.prototype.sendRequest = function (message, args) {
+        var request = { message: message };
+        if (args) request.args = args;
+
+        this.nodes.requests.push(request);
+    }
+    DbCommunicator.prototype.sendEvent = function (message, args) {
+        var event = { message: message };
+        if (args) event.args = args;
+
+        this.nodes.events.push(event);
+    }
+    DbCommunicator.prototype.sendChatMessage = function(text) {
+        var data = {
+            UID: this.userID,
+            message: text,
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+        }
+        this.nodes.chatMessages.push(data);
+    }
+    DbCommunicator.prototype.on_requests_childAdded = function (childSnapshot) {
+        var data = childSnapshot.val();
+        var message = data.message;
+        var args = data.args;
+
+        this.requests.raise(message, args);
+    }
+    DbCommunicator.prototype.on_events_childAdded = function (childSnapshot) {
+        var data = childSnapshot.val();
+        var message = data.message;
+        var args = data.args;
+
+        this.events.raise(message, args);
+    }
+    DbCommunicator.prototype.on_chatMessages_childAdded = function (childSnapshot) {
+        var data = childSnapshot.val();
+        this.chatMessages.raise("received", data);
     }
 }
 
@@ -153,35 +208,36 @@ function EventObject() {
     /** Invokes all event handlers associated with the specified event */
     EventObject.prototype.raise = function (eventName, args) {
         var self = this;
-        handlers.forEach(function (handler) {
+        self.handlers.forEach(function (handler) {
             var handlerFunc = handler[eventName];
             if (handlerFunc) {
-                handlerFunc.call(handlerContext || self, args);
+                handlerFunc.call(self.handlerContext || self, args);
             }
         });
     };
 
     /** Associates an event handler with this event source */
     EventObject.prototype.on = function (handlerCollection_or_name, handler_if_name) {
+        var handler = handlerCollection_or_name;
         // in the case of .on("event", handler), we turn it into on({event: handler});
         if (typeof handlerCollection_or_name == "string") {
-            var newHandler = {};
-            newHandler[handlerCollection_or_name] = handler_if_name;
+            var handler = {};
+            handler[handlerCollection_or_name] = handler_if_name;
         }
 
-        this.handlers.push(handlerCollection_or_name);
+        this.handlers.push(handler);
     };
 }
 
 // Test code
 $(document).ready(function () {
-    // var tweeter = new TwitterReader();
-    // tweeter.fetchTweets("realDonaldTrump", 10)
-    //     .then(function (tweets) {
-    //         console.log(tweets);
-    //     }).catch(function (error) {
-    //         console.log(error);
-    //     });
+    var tweeter = new TwitterReader();
+    tweeter.fetchTweets("realDonaldTrump", 10)
+        .then(function (tweets) {
+            console.log(tweets);
+        }).catch(function (error) {
+            console.log(error);
+        });
     // Initialize Firebase
 
     // var config = {
@@ -208,4 +264,18 @@ $(document).ready(function () {
         console.log(error);
     });
     //document.write(JSON.stringify())
+
+    comm.requests.on({test: function(args){
+        console.log("REQUEST - ", args);
+    }});
+    comm.events.on({test2: function(args){
+        console.log("EVENT - ", args);
+    }});
+    comm.chatMessages.on("received", function(args){
+        console.log("CHAT - ", args);
+    });
+
+    comm.sendEvent("test2", {abc: "123"});
+    comm.sendRequest("test", {"123": "abc"});
+    comm.sendChatMessage("herp derp");
 });
