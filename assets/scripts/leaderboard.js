@@ -9,22 +9,40 @@ var config = {
 };
 firebase.initializeApp(config);
 var database = firebase.database();
+var dateStr = moment().startOf('day').format("YYMMDD");
 function leaderboardPull(){
-	var dateStr = moment().startOf('day').format("YYMMDD");
 	console.log(dateStr)
-	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime').orderByChild("value");
-	leaderboardAllTime.once('value').then(function(snapshot){
+	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime');
+	leaderboardAllTime.orderByChild("score").once('value').then(function(snapshot){
 		console.log("All Time Leaders:")
 		for (var i in snapshot.val()){
-			console.log(i + ": "+snapshot.val()[i]["value"])
+			console.log(i + ": "+snapshot.val()[i]["score"])
 		}
 	})
-	var leaderboardToday = firebase.database().ref('leaderboard/'+dateStr).orderByChild("value");
+	var leaderboardToday = firebase.database().ref('leaderboard/'+dateStr).orderByChild("score").limitToLast(10);
 	leaderboardToday.once('value').then(function(snapshot){
 		console.log("Today's Leaders:")
 		for (i in snapshot.val()){
-			console.log(i+": "+snapshot.val()[i]["value"])
+			console.log(i+": "+snapshot.val()[i]["score"])
 		}
 	})
 }
+function leaderboardPush(user,score){
+	database.ref('leaderboard/alltime/'+user).set({
+		score:score
+	})
+	database.ref('leaderboard/'+dateStr+"/"+user).set({
+		score:score
+	})
+	console.log(user+": "+score)
+}
+function leaderboardHistoryPull(date){
+	database.ref('leaderboard/'+dateStr).once('value').then(function(snapshot){
+		console.log("Leaders for "+date+":")
+		for (i in snapshot.val()){
+			console.log(i+": "+snapshot.val()[i]["score"])}
+	})
+}
+leaderboardPush("Sam",100)
 leaderboardPull();
+leaderboardHistoryPull("180131")
