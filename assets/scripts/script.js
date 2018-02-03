@@ -288,8 +288,9 @@ $(document).ready(function () {
 var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13","TheEllenShow", "Oprah","KingJames", "TBrady14", "KyrieIrving", "Pontifex", "ElonMusk"]
 
 function getTweeterData(){
+    var reader = new TwitterReader();
     var user = tweeters[Math.floor(Math.random()*tweeters.length)]
-    var tweetObj = fetchTweets(user,1)[0];
+    var tweetObj = reader.fetchTweets(user,1)[0];
     return {
         name: tweetObj.name,
         profImg: tweetObj.profileImage,
