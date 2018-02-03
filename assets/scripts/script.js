@@ -125,7 +125,7 @@ var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13","Th
 function getTweeterData(){
     var user = tweeters[Math.floor(Math.random()*tweeters.length)]
     var tweetObj = fetchTweets(user,1)[0];
-    return tweet(){
+    return function(){
         name: tweetObj.name,
         profImg: tweetObj.profileImage,
         handle: tweetObj.username
