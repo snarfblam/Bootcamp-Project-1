@@ -12,19 +12,18 @@ var database = firebase.database();
 var dateStr = moment().startOf('day').format("YYMMDD");
 function leaderboardPull(){
 	console.log(dateStr)
-	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime');
-	leaderboardAllTime.orderByChild("score").once('value').then(function(snapshot){
-		console.log("All Time Leaders:")
-		for (var i in snapshot.val()){
-			console.log(i + ": "+snapshot.val()[i]["score"])
-		}
+	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime').orderByChild("score").limitToLast(10);
+	leaderboardAllTime.on('value',function(snapshot){
+	snapshot.forEach(function(child){
+		console.log(child.key+": "+child.val()["score"])
+		})
 	})
 	var leaderboardToday = firebase.database().ref('leaderboard/'+dateStr).orderByChild("score").limitToLast(10);
-	leaderboardToday.once('value').then(function(snapshot){
-		console.log("Today's Leaders:")
-		for (i in snapshot.val()){
-			console.log(i+": "+snapshot.val()[i]["score"])
-		}
+	console.log("Today's Leaders:")
+	leaderboardToday.on('value',function(snapshot){
+	snapshot.forEach(function(child){
+		console.log(child.key+": "+child.val()["score"])
+		})
 	})
 }
 function leaderboardPush(user,score){
@@ -37,12 +36,17 @@ function leaderboardPush(user,score){
 	console.log(user+": "+score)
 }
 function leaderboardHistoryPull(date){
-	database.ref('leaderboard/'+dateStr).once('value').then(function(snapshot){
-		console.log("Leaders for "+date+":")
-		for (i in snapshot.val()){
-			console.log(i+": "+snapshot.val()[i]["score"])}
+	var leaderboardToday = firebase.database().ref('leaderboard/'+date).orderByChild("score").limitToLast(10);
+	console.log("Leaders for "+date+":")
+	leaderboardToday.on('value',function(snapshot){
+		if (snapshot.length>0){
+			snapshot.forEach(function(child){
+			console.log(child.key+": "+child.val()["score"])
+		})}
+		else {
+			console.log("No data for "+date)
+		}
 	})
 }
-leaderboardPush("Sam",100)
 leaderboardPull();
 leaderboardHistoryPull("180131")
