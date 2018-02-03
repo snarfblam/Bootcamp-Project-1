@@ -10,11 +10,15 @@ var config = {
 firebase.initializeApp(config);
 var database = firebase.database();
 var dateStr = moment().startOf('day').format("YYMMDD");
+
 function leaderboardPull(){
 	console.log(dateStr)
+	//grab sorted leaderboard from firebas3
 	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime').orderByChild("score").limitToLast(10);
 	leaderboardAllTime.on('value',function(snapshot){
+	//step thru snapshot -- will need to store in an array
 	snapshot.forEach(function(child){
+		//the key here is presently a UID, will need it to be a username in the future
 		console.log(child.key+": "+child.val()["score"])
 		})
 	})
