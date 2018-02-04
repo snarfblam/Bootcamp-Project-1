@@ -125,8 +125,7 @@ function OAuthUtility() {
                 var token = result.credential.accessToken;
                 // ...
             } else {
-                firebase.auth().signInWithRedirect(self.provider);
-
+                self.signInWithRedirect();
             }
             // The signed-in user info.
             self.user = result.user;
@@ -142,6 +141,9 @@ function OAuthUtility() {
             // ...
         });
     };
+    OAuthUtility.prototype.signInWithRedirect = function() {
+        firebase.auth().signInWithRedirect(this.provider);
+    }
 }
 
 /** Implements Client<->database and server<->database communication 
@@ -199,6 +201,8 @@ function DbCommunicator(autoAuth, autoconnect) {
         this.auth = new OAuthUtility();
         /** Resolves when the communitcator has authenticated. */
         this.authPromise = null;
+        /** Resolves when the communitcator has connected. */
+        this.connectPromise = null;
     }
 
     this.nodes.activePlayers.on("value", this.on_activePlayers_value.bind(this));
@@ -217,16 +221,22 @@ function DbCommunicator(autoAuth, autoconnect) {
         var auth_promise = this.auth.authenticate();
 
         this.authPromise = auth_promise.then(function (result) {
+            if(!self.auth.user) { // not authenticated?
+                throw Error("Not authenticated.");
+            }
+
             self.user = self.auth.user;
             self.userID = self.auth.user.uid;
         }).catch(function (err) {
             console.warn("Authentication failed: ", err);
-            firebase.auth().signInWithRedirect(self.provider);
+            //firebase.auth().signInWithRedirect(self.provider);
+            self.auth.signInWithRedirect();
+            throw err;
         });
     }
 
     if(autoconnect) {
-        this.authPromise.then(function(){
+        this.connectPromise = this.authPromise.then(function(){
             self.joinRoom();
         });
     }
@@ -287,6 +297,13 @@ function DbCommunicator(autoAuth, autoconnect) {
     DbCommunicator.prototype.on_chatMessages_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
         this.chatMessages.raise("received", data);
+    }
+
+    DbCommunicator.prototype.on_ping_childAdded = function(childSnapshot) {
+        console.log("ping");
+    }
+    DbCommunicator.prototype.on_pong_childAdded = function(childSnapshot) {
+        console.log("pong");
     }
 
     DbCommunicator.prototype.on_pingMessages_childAdded = function (childSnapshot) {
@@ -427,6 +444,7 @@ $(document).ready(function () {
     }).catch(function (error) {
         console.log(error);
     });
+    
     //document.write(JSON.stringify())
 
     comm.requests.on({
@@ -442,10 +460,6 @@ $(document).ready(function () {
     comm.chatMessages.on("received", function (args) {
         console.log("CHAT - ", args);
     });
-
-    comm.sendEvent("test2", { abc: "123" });
-    comm.sendRequest("test", { "123": "abc" });
-    comm.sendChatMessage("herp derp");
 });
 
 var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13", "TheEllenShow", "Oprah", "KingJames", "TBrady14", "KyrieIrving", "Pontifex", "ElonMusk"]
@@ -453,12 +467,20 @@ var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13", "T
 function getTweeterData() {
     var reader = new TwitterReader();
     var user = tweeters[Math.floor(Math.random() * tweeters.length)]
-    var tweetObj = reader.fetchTweets(user, 1)[0];
-    return {
-        name: tweetObj.name,
-        profImg: tweetObj.profileImage,
-        handle: tweetObj.username
-    }
+    
+    // fetchTweets returns a promise. You need to do something like:
+    // reader.fetchTweets(user, 1)
+    //     .then(function(response) {
+    //          result = {...};
+    //          console.log(result);
+    //     });
+
+    // var tweetObj = reader.fetchTweets(user, 1)[0];
+    // return {
+    //     name: tweetObj.name,
+    //     profImg: tweetObj.profileImage,
+    //     handle: tweetObj.username
+    // }
 }
 
 console.log(getTweeterData())
