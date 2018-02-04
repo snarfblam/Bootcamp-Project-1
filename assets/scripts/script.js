@@ -222,7 +222,9 @@ function DbCommunicator(autoAuth, autoconnect) {
 
         this.authPromise = auth_promise.then(function (result) {
             if(!self.auth.user) { // not authenticated?
-                throw Error("Not authenticated.");
+                //throw Error("Not authenticated.");
+                self.auth.signInWithRedirect();
+                autoconnect = false;
             }
 
             self.user = self.auth.user;
@@ -231,7 +233,8 @@ function DbCommunicator(autoAuth, autoconnect) {
             console.warn("Authentication failed: ", err);
             //firebase.auth().signInWithRedirect(self.provider);
             self.auth.signInWithRedirect();
-            throw err;
+            autoconnect = false;
+                        // throw err;
         });
     }
 
