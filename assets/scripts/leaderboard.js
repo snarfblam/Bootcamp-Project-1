@@ -9,22 +9,48 @@ var config = {
 };
 firebase.initializeApp(config);
 var database = firebase.database();
+var dateStr = moment().startOf('day').format("YYMMDD");
+
 function leaderboardPull(){
-	var dateStr = moment().startOf('day').format("YYMMDD");
 	console.log(dateStr)
-	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime').orderByChild("value");
-	leaderboardAllTime.once('value').then(function(snapshot){
-		console.log("All Time Leaders:")
-		for (var i in snapshot.val()){
-			console.log(i + ": "+snapshot.val()[i]["value"])
-		}
+	//grab sorted leaderboard from firebas3
+	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime').orderByChild("score").limitToLast(10);
+	leaderboardAllTime.on('value',function(snapshot){
+	//step thru snapshot -- will need to store in an array
+	snapshot.forEach(function(child){
+		//the key here is presently a UID, will need it to be a username in the future
+		console.log(child.key+": "+child.val()["score"])
+		})
 	})
-	var leaderboardToday = firebase.database().ref('leaderboard/'+dateStr).orderByChild("value");
-	leaderboardToday.once('value').then(function(snapshot){
-		console.log("Today's Leaders:")
-		for (i in snapshot.val()){
-			console.log(i+": "+snapshot.val()[i]["value"])
+	var leaderboardToday = firebase.database().ref('leaderboard/'+dateStr).orderByChild("score").limitToLast(10);
+	console.log("Today's Leaders:")
+	leaderboardToday.on('value',function(snapshot){
+	snapshot.forEach(function(child){
+		console.log(child.key+": "+child.val()["score"])
+		})
+	})
+}
+function leaderboardPush(user,score){
+	database.ref('leaderboard/alltime/'+user).set({
+		score:score
+	})
+	database.ref('leaderboard/'+dateStr+"/"+user).set({
+		score:score
+	})
+	console.log(user+": "+score)
+}
+function leaderboardHistoryPull(date){
+	var leaderboardToday = firebase.database().ref('leaderboard/'+date).orderByChild("score").limitToLast(10);
+	console.log("Leaders for "+date+":")
+	leaderboardToday.on('value',function(snapshot){
+		if (snapshot.length>0){
+			snapshot.forEach(function(child){
+			console.log(child.key+": "+child.val()["score"])
+		})}
+		else {
+			console.log("No data for "+date)
 		}
 	})
 }
 leaderboardPull();
+leaderboardHistoryPull("180131")

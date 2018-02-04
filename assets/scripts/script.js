@@ -49,6 +49,7 @@ function TweetData(responseItem) {
     this.favoriteCount = responseItem.favorite_count;
     this.retweetCount = responseItem.retweet_count;
     this.media = [];
+    this.profileImage = responseItem.user.profile_image_url_https;
 
     (responseItem.media || []).forEach(function (media) {
         this.media.push({
@@ -329,3 +330,18 @@ $(document).ready(function () {
     comm.sendRequest("test", { "123": "abc" });
     comm.sendChatMessage("herp derp");
 });
+
+var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13","TheEllenShow", "Oprah","KingJames", "TBrady14", "KyrieIrving", "Pontifex", "ElonMusk"]
+
+function getTweeterData(){
+    var reader = new TwitterReader();
+    var user = tweeters[Math.floor(Math.random()*tweeters.length)]
+    var tweetObj = reader.fetchTweets(user,1)[0];
+    return {
+        name: tweetObj.name,
+        profImg: tweetObj.profileImage,
+        handle: tweetObj.username
+    }
+}
+
+console.log(getTweeterData())
