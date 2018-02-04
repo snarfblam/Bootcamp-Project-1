@@ -1,3 +1,9 @@
+
+debugOptions = {
+    allowDebugUser: true,
+}
+
+
 /** Utility class to be used by host to read from twitter. */
 function TwitterReader() {
     // Not much to do here...
@@ -141,7 +147,7 @@ function OAuthUtility() {
             // ...
         });
     };
-    OAuthUtility.prototype.signInWithRedirect = function() {
+    OAuthUtility.prototype.signInWithRedirect = function () {
         firebase.auth().signInWithRedirect(this.provider);
     }
 }
@@ -214,32 +220,45 @@ function DbCommunicator(autoAuth, autoconnect) {
     this.nodes.ping.on("child_added", this.on_ping_childAdded.bind(this));
     this.nodes.pong.on("child_added", this.on_pong_childAdded.bind(this));
 
-    this.host = new TwoteHost();
-    this.client = new TwoteClient();
+    this.host = new TwoteHost(self);
+    this.client = new TwoteClient(self);
 
     if (autoAuth) {
         var auth_promise = this.auth.authenticate();
 
-        this.authPromise = auth_promise.then(function (result) {
-            if(!self.auth.user) { // not authenticated?
-                //throw Error("Not authenticated.");
-                self.auth.signInWithRedirect();
-                autoconnect = false;
-            }
-
-            self.user = self.auth.user;
-            self.userID = self.auth.user.uid;
-        }).catch(function (err) {
-            console.warn("Authentication failed: ", err);
-            //firebase.auth().signInWithRedirect(self.provider);
-            self.auth.signInWithRedirect();
-            autoconnect = false;
-                        // throw err;
-        });
+        this.authPromise = auth_promise
+            .then(function (result) {
+                if (self.auth.user) { //authenticated?
+                    self.user = self.auth.user;
+                    self.userID = self.auth.user.uid;
+                } else {
+                    //throw Error("Not authenticated.");
+                    if (debugOptions.allowDebugUser && window.location.protocol == "file:") {
+                        // local machine debugging
+                        self.user = "testUser";
+                        self.userID = "0xDEADBEEF";
+                    } else {
+                        self.auth.signInWithRedirect();
+                        autoconnect = false;
+                    }
+                }
+            }).catch(function (err) {
+                console.warn("Authentication failed: ", err);
+                //firebase.auth().signInWithRedirect(self.provider);
+                if (debugOptions.allowDebugUser && window.location.protocol == "file:") {
+                    // local machine debugging
+                    self.user = "testUser";
+                    self.userID = "0xDEADBEEF";
+                } else {
+                    self.auth.signInWithRedirect();
+                    autoconnect = false;
+                }
+                // throw err;
+            });
     }
 
-    if(autoconnect) {
-        this.connectPromise = this.authPromise.then(function(){
+    if (autoconnect) {
+        this.connectPromise = this.authPromise.then(function () {
             self.joinRoom();
         });
     }
@@ -247,15 +266,15 @@ function DbCommunicator(autoAuth, autoconnect) {
     setInterval(this.pingInterval.bind(this), 1000);
 }
 {  // DbCommunicator - general
-    DbCommunicator.prototype.joinRoom = function() {
+    DbCommunicator.prototype.joinRoom = function () {
         var self = this;
-        if(!this.userID) throw Error("Attempted to join room when not authenticated.");
+        if (!this.userID) throw Error("Attempted to join room when not authenticated.");
 
         this.client.joinRoom();
 
-        this.nodes.host.once("value", function(snapshot) {
+        this.nodes.host.once("value", function (snapshot) {
             var host = snapshot.val();
-            if(!host) {
+            if (!host) {
                 self.host.joinRoom();
             }
         });
@@ -302,10 +321,10 @@ function DbCommunicator(autoAuth, autoconnect) {
         this.chatMessages.raise("received", data);
     }
 
-    DbCommunicator.prototype.on_ping_childAdded = function(childSnapshot) {
+    DbCommunicator.prototype.on_ping_childAdded = function (childSnapshot) {
         console.log("ping");
     }
-    DbCommunicator.prototype.on_pong_childAdded = function(childSnapshot) {
+    DbCommunicator.prototype.on_pong_childAdded = function (childSnapshot) {
         console.log("pong");
     }
 
@@ -327,7 +346,7 @@ function DbCommunicator(autoAuth, autoconnect) {
     };
 }
 { // DBCommunicator - Ping
-    DbCommunicator.prototype.pingInterval = function() {
+    DbCommunicator.prototype.pingInterval = function () {
         //todo: watch host ping. if host, watch client pings.
     };
     // /** Returns a promise that resolves */ 
@@ -356,7 +375,7 @@ function TwoteHost(dbcomm) {
     this.connected = false;
 }
 {
-    TwoteHost.prototype.joinRoom = function() {
+    TwoteHost.prototype.joinRoom = function () {
         this.dbComm.nodes.host = this.dbComm.userID;
     }
 }
@@ -369,9 +388,7 @@ function TwoteClient(dbcomm) {
     this.connected = false;
 }
 {
-    TwoteClient.prototype.joinRoom = function(dbComm) {
-        this.dbComm = dbComm;
-
+    TwoteClient.prototype.joinRoom = function () {
         // Joining is as simple as putting oneself on the list
         this.dbComm.nodes.allPlayers.push(this.dbComm.userID);
         this.connected = true;
@@ -447,7 +464,7 @@ $(document).ready(function () {
     }).catch(function (error) {
         console.log(error);
     });
-    
+
     //document.write(JSON.stringify())
 
     comm.requests.on({
@@ -470,7 +487,7 @@ var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13", "T
 function getTweeterData() {
     var reader = new TwitterReader();
     var user = tweeters[Math.floor(Math.random() * tweeters.length)]
-    
+
     // fetchTweets returns a promise. You need to do something like:
     // reader.fetchTweets(user, 1)
     //     .then(function(response) {

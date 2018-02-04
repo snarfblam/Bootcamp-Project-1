@@ -1,0 +1,7 @@
+How it works:
+    DbCommunicator - The main thing. It connects to firebase and creates other objects.
+        General flow: You create a DbCommunicator. It attempts to authenticate with OAuth
+            - User will be continuiously redirected to login page until he's authenticated
+            - DbCommunicator.authPromise will reject in this event
+        Once authenticated, DbCommunicator will join the room as a client.
+        If there is no host, or the host times out, DbCommunicator will also begin hosting.
