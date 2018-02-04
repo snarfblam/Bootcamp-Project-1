@@ -60,7 +60,54 @@ function TweetData(responseItem) {
     }, this);
 }
 
-/** Performs OAuth operation */
+/** Provides utility methods to treat objects as dictionaries (aka maps) */
+var Dic = {
+    /** Enumerates all of the object's own enumerable properties. Accepts a callback function(key, value) */
+    forEach: function (obj, callback, _this) {
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                callback.call(_this || this, key, obj[key]); // inherit this function's context if _this is not specified, e.g. window, of if user does Map.forEach.call(someObj, callback, this)
+            }
+        }
+    },
+
+    /** Enumerates all of the object's own enumerable properties. Accepts a callback function(key) */
+    forEachKey: function (obj, callback, _this) {
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                callback.call(_this || this, key); // inherit this function's context if _this is not specified, e.g. window, of if user does Map.forEach.call(someObj, callback, this)
+            }
+        }
+    },
+
+    /** Enumerates all of the object's own enumerable properties. Accepts a callback function(value) */
+    forEachValue: function (obj, callback, _this) {
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                callback.call(_this || this, obj[key]); // inherit this function's context if _this is not specified, e.g. window, of if user does Map.forEach.call(someObj, callback, this)
+            }
+        }
+    },
+
+    /** Gets all of the object's own enumerable properties */
+    getKeys: function (obj) {
+        return Object.keys(obj);
+    },
+
+    /** Gets all values of the object's properties */
+    getValues: function (obj) {
+        var result = [];
+        Dic.forEachValue(function (v) { result.push(v) });
+        return result;
+    },
+
+    /** Removes the specified property from the object */
+    remove: function (obj, key) {
+        return delete obj[key];
+    }
+}
+/** Performs OAuth operation 
+ *  @constructor */
 function OAuthUtility() {
     this.provider = new firebase.auth.GoogleAuthProvider();
     this.user = null;
@@ -99,58 +146,73 @@ function OAuthUtility() {
 
 /** Implements Client<->database and server<->database communication 
  *  @constructor */
-function DbCommunicator(autoAuth) {
+function DbCommunicator(autoAuth, autoconnect) {
     var self = this;
 
-    var config = {
-        apiKey: "AIzaSyBl7_O3pchKuUbj5TEBAcoOOpAlV-4RDRE",
-        authDomain: "bcs-whosaidit.firebaseapp.com",
-        databaseURL: "https://bcs-whosaidit.firebaseio.com",
-        projectId: "bcs-whosaidit",
-        storageBucket: "bcs-whosaidit.appspot.com",
-        messagingSenderId: "736508559692"
-    };
-    /** firebase.app.App object */
-    this.app = firebase.initializeApp(config);
-    this.database = firebase.database();
+    { // instance properties
+        var config = {
+            apiKey: "AIzaSyBl7_O3pchKuUbj5TEBAcoOOpAlV-4RDRE",
+            authDomain: "bcs-whosaidit.firebaseapp.com",
+            databaseURL: "https://bcs-whosaidit.firebaseio.com",
+            projectId: "bcs-whosaidit",
+            storageBucket: "bcs-whosaidit.appspot.com",
+            messagingSenderId: "736508559692"
+        };
+        /** firebase.app.App object */
+        this.app = firebase.initializeApp(config);
+        this.database = firebase.database();
 
-    /** Raises events when a request is received. E.g. the 'playerGuessed'
-     * message will raise the 'playerGuessed' event.
-     */
-    this.requests = new EventObject();
-    /** Raises events when an event is received. E.g. the 'playerGuessed'
-     * message will raise the 'playerGuessed' event.
-     */
-    this.events = new EventObject();
-    /** Raises the 'received' message when a chat message is received */
-    this.chatMessages = new EventObject();
+        /** Raises events when a request is received. E.g. the 'playerGuessed'
+         * message will raise the 'playerGuessed' event.
+         */
+        this.requests = new EventObject();
+        /** Raises events when an event is received. E.g. the 'playerGuessed'
+         * message will raise the 'playerGuessed' event.
+         */
+        this.events = new EventObject();
+        /** Raises the 'received' message when a chat message is received */
+        this.chatMessages = new EventObject();
 
-    this.nodes = {
-        leaderboard: this.database.ref("leaderboard"),
-        players: this.database.ref("users-active"),
-        waitlist: this.database.ref("waitlist"),
-        chatMessages: this.database.ref("chat"),
-        //currentRound: this.database.ref("currentRound"),
-        requests: this.database.ref("current-round/requests"),
-        events: this.database.ref("current-round/events"),
-        host: this.database.ref("host"),
-        ping: this.database.ref("ping"),
-        pong: this.database.ref("pong"),
-    };
+        this.nodes = {
+            leaderboard: this.database.ref("leaderboard"),
+            activePlayers: this.database.ref("users-active"),
+            allPlayers: this.database.ref("users-present"),
+            chatMessages: this.database.ref("chat"),
+            //currentRound: this.database.ref("currentRound"),
+            requests: this.database.ref("current-round/requests"),
+            events: this.database.ref("current-round/events"),
+            host: this.database.ref("host"),
+            ping: this.database.ref("ping"),
+            pong: this.database.ref("pong"),
+        };
 
+        this.cached = {
+            players: [],
+            waitlist: [],
+            host: null,
+        };
+
+        /** Firebase user uid */
+        this.userID = null;
+        /** OAuth user data */
+        this.user = null;
+        this.auth = new OAuthUtility();
+        /** Resolves when the communitcator has authenticated. */
+        this.authPromise = null;
+    }
+
+    this.nodes.activePlayers.on("value", this.on_activePlayers_value.bind(this));
+    this.nodes.allPlayers.on("value", this.on_allPlayers_value.bind(this));
+    this.nodes.host.on("value", this.on_host_value.bind(this));
     this.nodes.requests.on("child_added", this.on_requests_childAdded.bind(this));
     this.nodes.events.on("child_added", this.on_events_childAdded.bind(this));
     this.nodes.chatMessages.on("child_added", this.on_chatMessages_childAdded.bind(this));
     this.nodes.ping.on("child_added", this.on_ping_childAdded.bind(this));
     this.nodes.pong.on("child_added", this.on_pong_childAdded.bind(this));
 
-    /** Firebase user uid */
-    this.userID = null;
-    /** OAuth user data */
-    this.user = null;
-    this.auth = new OAuthUtility();
-    /** Resolves when the communitcator has authenticated */
-    this.authPromise = null;
+    this.host = new TwoteHost();
+    this.client = new TwoteClient();
+
     if (autoAuth) {
         var auth_promise = this.auth.authenticate();
 
@@ -158,23 +220,47 @@ function DbCommunicator(autoAuth) {
             self.user = self.auth.user;
             self.userID = self.auth.user.uid;
         }).catch(function (err) {
-            alert("todo: handle this error");
+            console.warn("Authentication failed: ", err);
+            firebase.auth().signInWithRedirect(self.provider);
+        });
+    }
+
+    if(autoconnect) {
+        this.authPromise.then(function(){
+            self.joinRoom();
+        });
+    }
+
+    setInterval(this.pingInterval.bind(this), 1000);
+}
+{  // DbCommunicator - general
+    DbCommunicator.prototype.joinRoom = function() {
+        var self = this;
+        if(!this.userID) throw Error("Attempted to join room when not authenticated.");
+
+        this.client.joinRoom();
+
+        this.nodes.host.once("value", function(snapshot) {
+            var host = snapshot.val();
+            if(!host) {
+                self.host.joinRoom();
+            }
         });
     }
 }
-{
+{ // DbCommunicator - Send and receive from firebase
     DbCommunicator.prototype.sendRequest = function (message, args) {
         var request = { message: message };
         if (args) request.args = args;
-
         this.nodes.requests.push(request);
     }
+
     DbCommunicator.prototype.sendEvent = function (message, args) {
         var event = { message: message };
         if (args) event.args = args;
-
         this.nodes.events.push(event);
     }
+
     DbCommunicator.prototype.sendChatMessage = function (text) {
         var data = {
             UID: this.userID,
@@ -183,61 +269,92 @@ function DbCommunicator(autoAuth) {
         }
         this.nodes.chatMessages.push(data);
     }
-    /** Returns a promise that resolves */ // left off here
-    DbCommunicator.prototype.sendPing = function(user) {
-        var data = {user: user};
-        this.nodes.ping.push(data);
-    }
+
     DbCommunicator.prototype.on_requests_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
         var message = data.message;
         var args = data.args;
-
         this.requests.raise(message, args);
     }
+
     DbCommunicator.prototype.on_events_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
         var message = data.message;
         var args = data.args;
-
         this.events.raise(message, args);
     }
+
     DbCommunicator.prototype.on_chatMessages_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
         this.chatMessages.raise("received", data);
     }
+
     DbCommunicator.prototype.on_pingMessages_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
     }
+
     DbCommunicator.prototype.on_pongMessages_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
     }
-    DbCommunicator.prototype.pingPromise = function(userID, timeout) {
-        var self = this;
+    DbCommunicator.prototype.on_activePlayers_value = function (snapshot) {
+        this.cached.players = snapshot.val() || {};
+    };
+    DbCommunicator.prototype.on_allPlayers_value = function (snapshot) {
+        this.cached.waitlist = snapshot.val() || {};
+    };
+    DbCommunicator.prototype.on_host_value = function (snapshot) {
+        this.cached.host = snapshot.val();
+    };
+}
+{ // DBCommunicator - Ping
+    DbCommunicator.prototype.pingInterval = function() {
+        //todo: watch host ping. if host, watch client pings.
+    };
+    // /** Returns a promise that resolves */ 
+    // DbCommunicator.prototype.sendPing = function(user) {
+    //     var data = {user: user};
+    //     this.nodes.ping.push(data);
+    // }
 
-        return $.when(function(){
-            var def = $.Deferred();
+    // DbCommunicator.prototype.pingPromise = function(userID, timeout) {
+    //     var self = this;
 
-        });
-        
+    //     return $.when(function(){
+    //         var def = $.Deferred();
 
-    }
+    //     });
+
+
+    // }
 }
 
 /** Implements game server logic. Only the host browser utilizes this class. 
  * @constructor */
-function TwoteServer() {
-
+function TwoteHost(dbcomm) {
+    /** @type {DbCommunicator} */
+    this.dbComm = dbcomm;
+    this.connected = false;
 }
 {
-    TwoteServer.performHostCheck = function (dbComm) {
-        var x = new DbCommunicator();
-        x.nodes.host.once("value", function(snap){
-            var hostData = snap.val();
-            if(hostData) {
-                // need to ping host
-            }
-        });
+    TwoteHost.prototype.joinRoom = function() {
+        this.dbComm.nodes.host = this.dbComm.userID;
+    }
+}
+
+/** Implements client logic. All browsers utilize this calss.
+ * @constructor */
+function TwoteClient(dbcomm) {
+    /** @type {DbCommunicator} */
+    this.dbComm = dbcomm;
+    this.connected = false;
+}
+{
+    TwoteClient.prototype.joinRoom = function(dbComm) {
+        this.dbComm = dbComm;
+
+        // Joining is as simple as putting oneself on the list
+        this.dbComm.nodes.allPlayers.push(this.dbComm.userID);
+        this.connected = true;
     }
 }
 
@@ -302,7 +419,7 @@ $(document).ready(function () {
     //         $(document.body).append($("<img>").attr("src", "https://robohash.org/" + auth.user.displayName));
     //     });
 
-    var comm = new DbCommunicator(true);
+    var comm = new DbCommunicator(true, true);
     comm.authPromise.then(function (result) {
         console.log(comm.user);
         //console.log(comm.)
@@ -331,12 +448,12 @@ $(document).ready(function () {
     comm.sendChatMessage("herp derp");
 });
 
-var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13","TheEllenShow", "Oprah","KingJames", "TBrady14", "KyrieIrving", "Pontifex", "ElonMusk"]
+var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13", "TheEllenShow", "Oprah", "KingJames", "TBrady14", "KyrieIrving", "Pontifex", "ElonMusk"]
 
-function getTweeterData(){
+function getTweeterData() {
     var reader = new TwitterReader();
-    var user = tweeters[Math.floor(Math.random()*tweeters.length)]
-    var tweetObj = reader.fetchTweets(user,1)[0];
+    var user = tweeters[Math.floor(Math.random() * tweeters.length)]
+    var tweetObj = reader.fetchTweets(user, 1)[0];
     return {
         name: tweetObj.name,
         profImg: tweetObj.profileImage,
