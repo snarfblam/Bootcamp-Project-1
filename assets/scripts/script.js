@@ -1,7 +1,10 @@
 
 debugOptions = {
     allowDebugUser: true,
-}
+};
+twoteConfig = {
+    hostPingTimeout: 15, // seconds
+};
 
 
 /** Utility class to be used by host to read from twitter. */
@@ -182,16 +185,16 @@ function DbCommunicator(autoAuth, autoconnect) {
         this.chatMessages = new EventObject();
 
         this.nodes = {
-            leaderboard: this.database.ref("leaderboard"),
-            activePlayers: this.database.ref("users-active"),
-            allPlayers: this.database.ref("users-present"),
-            chatMessages: this.database.ref("chat"),
+            leaderboard: this.database.ref("room/leaderboard"),
+            activePlayers: this.database.ref("room/users-active"),
+            allPlayers: this.database.ref("room/users-present"),
+            chatMessages: this.database.ref("room/chat"),
             //currentRound: this.database.ref("currentRound"),
-            requests: this.database.ref("current-round/requests"),
-            events: this.database.ref("current-round/events"),
-            host: this.database.ref("host"),
-            ping: this.database.ref("ping"),
-            pong: this.database.ref("pong"),
+            requests: this.database.ref("room/current-round/requests"),
+            events: this.database.ref("room/current-round/events"),
+            host: this.database.ref("room/host"),
+            ping: this.database.ref("room/ping"),
+            pong: this.database.ref("room/pong"),
         };
 
         this.cached = {
@@ -209,6 +212,7 @@ function DbCommunicator(autoAuth, autoconnect) {
         this.authPromise = null;
         /** Resolves when the communitcator has connected. */
         this.connectPromise = null;
+        this.isHosting = false;
     }
 
     this.nodes.activePlayers.on("value", this.on_activePlayers_value.bind(this));
@@ -279,6 +283,17 @@ function DbCommunicator(autoAuth, autoconnect) {
             }
         });
     }
+
+    /** Asserts this player as the host of the room. Used when the previous host times out. */
+    DbCommunicator.prototype.usurpRoom = function () {
+        // There should probably be something involving a transaction here to avoid a race condition
+        // between multiple clients.
+        this.nodes.host.push(this.userID);
+        this.sendPong();
+
+        alert("We're taking over!");
+        // todo: take over
+    }
 }
 { // DbCommunicator - Send and receive from firebase
     DbCommunicator.prototype.sendRequest = function (message, args) {
@@ -301,6 +316,15 @@ function DbCommunicator(autoAuth, autoconnect) {
         }
         this.nodes.chatMessages.push(data);
     }
+
+    DbCommunicator.prototype.sendPing = function (to) {
+        this.nodes.ping.push({ from: this.userID, to: to });
+    }
+
+    DbCommunicator.prototype.sendPong = function () {
+        this.nodes.pong.push({ from: this.userID });
+    }
+
 
     DbCommunicator.prototype.on_requests_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
@@ -330,10 +354,14 @@ function DbCommunicator(autoAuth, autoconnect) {
 
     DbCommunicator.prototype.on_pingMessages_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
+        // todo: ping host
+        this.client.handlePing(data);
     }
 
     DbCommunicator.prototype.on_pongMessages_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
+        // todo: pong host
+        this.client.handlePong(data);
     }
     DbCommunicator.prototype.on_activePlayers_value = function (snapshot) {
         this.cached.players = snapshot.val() || {};
@@ -376,7 +404,7 @@ function TwoteHost(dbcomm) {
 }
 {
     TwoteHost.prototype.joinRoom = function () {
-        this.dbComm.nodes.host = this.dbComm.userID;
+        this.dbComm.host = this.dbComm.userID;
     }
 }
 
@@ -386,12 +414,47 @@ function TwoteClient(dbcomm) {
     /** @type {DbCommunicator} */
     this.dbComm = dbcomm;
     this.connected = false;
+    this.hostPingTime = false;
+
+    this.pingInterval = setInterval(this.pingCheck.bind(this), 1000); // once a second
 }
 {
     TwoteClient.prototype.joinRoom = function () {
         // Joining is as simple as putting oneself on the list
         this.dbComm.nodes.allPlayers.push(this.dbComm.userID);
         this.connected = true;
+    }
+
+    /** Responds to a ping if necessary */
+    TwoteClient.prototype.handlePing = function (data) {
+        var toMe = (data.to == this.dbComm.userID) || (data.to == "all");
+        if (toMe) {
+            this.dbComm.sendPong();
+        }
+    }
+
+    /** Accepts notifications of ping responses. */
+    TwoteClient.prototype.handlePong = function (data) {
+        if (data.from == this.dbComm.cached.host) {
+            this.hostPingTime = 0;
+        }
+    }
+
+    /** Implements periodical player time-out logic */
+    TwoteClient.prototype.pingCheck = function (data) {
+        if (!this.dbComm.host.connected) { // host can't time out of we're the host
+            var limit = twoteConfig.hostPingTimeout;
+            this.hostPingTime++;
+
+            if (this.hostPingTime == limit) {
+                this.dbComm.sendPing(this.dbComm.cached.host);
+            }
+
+            if (this.hostPingTime >= limit * 2) {
+                this.hostPingTime = 0; // don't keep usurping. you onnly need to usurp once.
+                this.dbComm.usurpRoom();
+            }
+        }
     }
 }
 
