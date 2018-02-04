@@ -1,7 +1,12 @@
 
-debugOptions = {
+var debugOptions = {
     allowDebugUser: true,
-}
+};
+var twoteConfig = {
+    hostPingTimeout: 10, // seconds
+    userPingTimeout: 10, // seconds
+    hostPremptivePing: 8, // seconds
+};
 
 
 /** Utility class to be used by host to read from twitter. */
@@ -155,6 +160,9 @@ function OAuthUtility() {
 /** Implements Client<->database and server<->database communication 
  *  @constructor */
 function DbCommunicator(autoAuth, autoconnect) {
+    // inherits EventObject
+    EventObject.call(this);
+
     var self = this;
 
     { // instance properties
@@ -183,20 +191,21 @@ function DbCommunicator(autoAuth, autoconnect) {
 
         this.nodes = {
             leaderboard: this.database.ref("leaderboard"),
-            activePlayers: this.database.ref("users-active"),
-            allPlayers: this.database.ref("users-present"),
-            chatMessages: this.database.ref("chat"),
+            activePlayers: this.database.ref("room/users-active"),
+            allPlayers: this.database.ref("room/users-present"),
+            chatMessages: this.database.ref("room/chat"),
             //currentRound: this.database.ref("currentRound"),
-            requests: this.database.ref("current-round/requests"),
-            events: this.database.ref("current-round/events"),
-            host: this.database.ref("host"),
-            ping: this.database.ref("ping"),
-            pong: this.database.ref("pong"),
+            requests: this.database.ref("room/current-round/requests"),
+            events: this.database.ref("room/current-round/events"),
+            host: this.database.ref("room/host"),
+            ping: this.database.ref("room/ping"),
+            pong: this.database.ref("room/pong"),
         };
 
+        /** Most revent version of data sent from firebase */
         this.cached = {
-            players: [],
-            waitlist: [],
+            activePlayers: [],
+            allPlayers: [],
             host: null,
         };
 
@@ -209,6 +218,7 @@ function DbCommunicator(autoAuth, autoconnect) {
         this.authPromise = null;
         /** Resolves when the communitcator has connected. */
         this.connectPromise = null;
+        this.isHosting = false;
     }
 
     this.nodes.activePlayers.on("value", this.on_activePlayers_value.bind(this));
@@ -236,7 +246,7 @@ function DbCommunicator(autoAuth, autoconnect) {
                     if (debugOptions.allowDebugUser && window.location.protocol == "file:") {
                         // local machine debugging
                         self.user = "testUser";
-                        self.userID = "0xDEADBEEF";
+                        self.userID = "0xDEADBEEF_" + Math.floor(Math.random() * 1000);
                     } else {
                         self.auth.signInWithRedirect();
                         autoconnect = false;
@@ -266,6 +276,11 @@ function DbCommunicator(autoAuth, autoconnect) {
     setInterval(this.pingInterval.bind(this), 1000);
 }
 {  // DbCommunicator - general
+
+    // Inherit EventObject
+    DbCommunicator.prototype = Object.create(EventObject.prototype);
+    DbCommunicator.prototype.constructor = DbCommunicator;
+
     DbCommunicator.prototype.joinRoom = function () {
         var self = this;
         if (!this.userID) throw Error("Attempted to join room when not authenticated.");
@@ -278,6 +293,17 @@ function DbCommunicator(autoAuth, autoconnect) {
                 self.host.joinRoom();
             }
         });
+    }
+
+    /** Asserts this player as the host of the room. Used when the previous host times out. */
+    DbCommunicator.prototype.usurpRoom = function () {
+        // There should probably be something involving a transaction here to avoid a race condition
+        // between multiple clients.
+        this.nodes.host.set(this.userID);
+        this.sendPong();
+
+        alert("We're taking over!");
+        // todo: take over
     }
 }
 { // DbCommunicator - Send and receive from firebase
@@ -302,6 +328,15 @@ function DbCommunicator(autoAuth, autoconnect) {
         this.nodes.chatMessages.push(data);
     }
 
+    DbCommunicator.prototype.sendPing = function (to) {
+        this.nodes.ping.push({ from: this.userID, to: to });
+    }
+
+    DbCommunicator.prototype.sendPong = function () {
+        this.nodes.pong.push({ from: this.userID });
+    }
+
+
     DbCommunicator.prototype.on_requests_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
         var message = data.message;
@@ -322,27 +357,42 @@ function DbCommunicator(autoAuth, autoconnect) {
     }
 
     DbCommunicator.prototype.on_ping_childAdded = function (childSnapshot) {
-        console.log("ping");
+        var data = childSnapshot.val();
+        // todo: ping host
+        this.client.handlePing(data);
     }
     DbCommunicator.prototype.on_pong_childAdded = function (childSnapshot) {
-        console.log("pong");
+        var data = childSnapshot.val();
+        // todo: pong host
+        this.client.handlePong(data);
     }
 
-    DbCommunicator.prototype.on_pingMessages_childAdded = function (childSnapshot) {
-        var data = childSnapshot.val();
-    }
+    // DbCommunicator.prototype.on_pingMessages_childAdded = function (childSnapshot) {
+    //     var data = childSnapshot.val();
+    //     // todo: ping host
+    //     this.client.handlePing(data);
+    // }
 
-    DbCommunicator.prototype.on_pongMessages_childAdded = function (childSnapshot) {
-        var data = childSnapshot.val();
-    }
+    // DbCommunicator.prototype.on_pongMessages_childAdded = function (childSnapshot) {
+    //     var data = childSnapshot.val();
+    //     // todo: pong host
+    //     this.client.handlePong(data);
+    // }
+
     DbCommunicator.prototype.on_activePlayers_value = function (snapshot) {
-        this.cached.players = snapshot.val() || {};
+        this.cached.activePlayers = snapshot.val() || {};
+        this.raise("activePlayersChanged", this.cached.activePlayers);
     };
+
     DbCommunicator.prototype.on_allPlayers_value = function (snapshot) {
-        this.cached.waitlist = snapshot.val() || {};
+        this.cached.allPlayers = snapshot.val() || {};
+        this.raise("playersChanged", this.cached.allPlayers);
     };
+
     DbCommunicator.prototype.on_host_value = function (snapshot) {
         this.cached.host = snapshot.val();
+        this.raise("hostchanged", this.cached.host);
+
     };
 }
 { // DBCommunicator - Ping
@@ -373,10 +423,112 @@ function TwoteHost(dbcomm) {
     /** @type {DbCommunicator} */
     this.dbComm = dbcomm;
     this.connected = false;
+    this.state = TwoteHost.states.waiting;
+
+    this.pingList = []; // UserIDs
+    this.userPingTime = 0;
+    this.userPingNext = twoteConfig.userPingTimeout;
+    this.preemtivePongTime = twoteConfig.hostPremptivePing;
+
+    this.dbComm.on({
+        playersChanged: this.dbComm_playersChanged.bind(this),
+    });
+
+    setInterval(this.pingCheck.bind(this), 1000); // once per second
 }
 {
+    TwoteHost.states = {
+        waiting: "waiting",
+    };
+
     TwoteHost.prototype.joinRoom = function () {
-        this.dbComm.nodes.host = this.dbComm.userID;
+        // Heeeere's Johnny!
+        this.dbComm.nodes.host.set(this.dbComm.userID);
+        // Re-initialize the room.
+        // .allPlayers is left intact. If they're not really here, they'll time out.
+        this.dbComm.nodes.activePlayers.set(null);
+        this.dbComm.nodes.events.set(null);
+        this.dbComm.nodes.ping.set(null);
+        this.dbComm.nodes.pong.set(null);
+
+        this.state = TwoteHost.states.waiting;
+        this.pingAllUsers();
+    }
+
+    TwoteHost.prototype.pingAllUsers = function () {
+        var pingList = this.pingList = [];
+        this.userPingTime2 = 0;
+
+        // List of all users we're waiting to hear back from
+        Dic.forEachKey(this.dbComm.cached.allPlayers, function (key) {
+            pingList.push(key);
+        });
+
+        this.dbComm.sendPing("all");
+    }
+    TwoteHost.prototype.pingCheck = function () {
+        // Periodically pong users without them pinging us, to reduce unnecessary pinging
+        this.preemtivePongTime --;
+        if(this.preemtivePongTime <= 0) {
+            this.preemtivePongTime = twoteConfig.hostPremptivePing;
+            this.dbComm.sendPong();
+        }
+
+        var limit = twoteConfig.userPingTimeout;
+
+        if(this.userPingNext > 0) {
+            this.userPingNext --;
+            if(this.userPingNext == 0) {
+                this.pingAllUsers();
+            }
+        } else {
+            this.userPingTime++;
+
+            if(this.userPingTime >= limit) {
+                // kick all unponged users
+            }
+        }
+    }
+
+    TwoteHost.prototype.handlePing = function (data) {
+        // pong if I'm the target (can server be the target?)
+    }
+    TwoteHost.prototype.handlePong = function (data) {
+        var userID = data.from;
+
+        var index = this.pingList.indexOf(userID);
+        if (index >= 0) {
+            this.pingList.splice(index, 1);
+        }
+
+        if (this.pingList.length == 0) {
+            this.handleAllPlayersPonged();
+        }
+    }
+
+    TwoteHost.prototype.dbComm_playersChanged = function () {
+        if (this.pingList.length == 0) return;
+
+        var allPlayers = Dic.getKeys(this.dbComm.cached.allPlayers);
+
+        for (var i = this.pingList.length - 1; i >= 0; i--) {
+            var playerStillHere = allPlayers.indexOf(this.pingList[i] >= 0);
+
+            if (!playerStillHere) {
+                this.pingList.splice(i, 1);
+            }
+        }
+
+        if (this.pingList.length == 0) this.handleAllPlayersPonged();
+    }
+
+    TwoteHost.prototype.handleAllPlayersPonged = function () {
+        this.userPingNext = twoteConfig.userPingTimeout;
+        this.userPingTime = 0;
+
+        if (this.state == TwoteHost.states.waiting) {
+            this.beginRound();
+        }
     }
 }
 
@@ -386,12 +538,56 @@ function TwoteClient(dbcomm) {
     /** @type {DbCommunicator} */
     this.dbComm = dbcomm;
     this.connected = false;
+    this.hostPingTime = 0;
+    this.hostPingNext = twoteConfig.hostPingTimeout;
+
+    this.pingInterval = setInterval(this.pingCheck.bind(this), 1000); // once a second
 }
 {
     TwoteClient.prototype.joinRoom = function () {
         // Joining is as simple as putting oneself on the list
-        this.dbComm.nodes.allPlayers.push(this.dbComm.userID);
+        this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ displayName: this.dbComm.user });
         this.connected = true;
+    }
+
+    /** Responds to a ping if necessary */
+    TwoteClient.prototype.handlePing = function (data) {
+        var toMe = (data.to == this.dbComm.userID) || (data.to == "all");
+        if (toMe) {
+            this.dbComm.sendPong();
+        }
+    }
+
+    /** Accepts notifications of ping responses. */
+    TwoteClient.prototype.handlePong = function (data) {
+        if (data.from == this.dbComm.cached.host) {
+            this.hostPingTime = 0;
+            this.hostPingNext = twoteConfig.hostPingTimeout;
+        }
+    }
+
+    /** Implements periodical player time-out logic */
+    TwoteClient.prototype.pingCheck = function (data) {
+        if (!this.dbComm.host.connected) { // host can't time out of we're the host
+            var limit = twoteConfig.hostPingTimeout;
+
+            if (this.hostPingNext > 0) {
+                // count down delay between pings
+                this.hostPingNext--;
+                if (this.hostPingNext == 0) {
+                    this.hostPingTime = 0;
+                    this.dbComm.sendPing(this.dbComm.cached.host);
+                }
+            } else  {
+                this.hostPingTime++;
+                console.log(this.hostPingTime);
+
+                if (this.hostPingTime >= limit) {
+                    this.hostPingTime = 0; // don't keep usurping. you onnly need to usurp once.
+                    this.dbComm.usurpRoom();
+                }
+            }
+        }
     }
 }
 
