@@ -302,7 +302,7 @@ function DbCommunicator(autoAuth, autoconnect) {
         this.sendPong();
 
         alert("We're taking over!");
-        // todo: take over
+        // todo: take over. sent event message that host timed out, wait a beat, and re-initialize the room, leaving all-users list intact
     }
 }
 { // DbCommunicator - Send and receive from firebase
@@ -462,24 +462,34 @@ function TwoteHost(dbcomm) {
         var limit = twoteConfig.userPingTimeout;
 
         if (this.userPingNext > 0) {
+            // Waiting till it's time to ping again
             this.userPingNext--;
             if (this.userPingNext == 0) {
                 this.pingAllUsers();
             }
         } else {
+            // Waiting for pongs...
             this.userPingTime++;
 
             if (this.userPingTime >= limit) {
-                // kick all unponged users
+                // Time's up...
+                pingList.forEach(function (pingedUser) {
+                    this.kickTimedOutUser(pingedUser);
+                });
+
+                // All users that haven't been kicked have ponged.
+                // Re-start ping process
+                this.handleAllPlayersPonged();
             }
         }
     }
-
+    TwoteHost.prototype.kickTimedOutUserhandlePing = function (user) {
+    }
     TwoteHost.prototype.handlePing = function (data) {
         // pong if I'm the target (can server be the target?)
     }
     TwoteHost.prototype.handlePong = function (data) {
-        if(!this.connected) return;
+        if (!this.connected) return;
 
         var userID = data.from;
 
@@ -539,8 +549,8 @@ function TwoteClient(dbcomm) {
 
     /** Responds to a ping if necessary */
     TwoteClient.prototype.handlePing = function (data) {
-        if(!this.connected) return;
-        
+        if (!this.connected) return;
+
         var toMe = (data.to == this.dbComm.userID) || (data.to == "all");
         if (toMe) {
             this.dbComm.sendPong();
@@ -549,7 +559,7 @@ function TwoteClient(dbcomm) {
 
     /** Accepts notifications of ping responses. */
     TwoteClient.prototype.handlePong = function (data) {
-        if(!this.connected) return;
+        if (!this.connected) return;
 
         if (data.from == this.dbComm.cached.host) {
             this.hostPingTime = 0;

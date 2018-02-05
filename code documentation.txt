@@ -5,3 +5,36 @@ How it works:
             - DbCommunicator.authPromise will reject in this event
         Once authenticated, DbCommunicator will join the room as a client.
         If there is no host, or the host times out, DbCommunicator will also begin hosting.
+
+pinging:
+    pinging works by pushing an object to the "ping" node. When the recipient sees the
+    child added to "ping", he responds by pushing to the "pong node". The host and clients
+    ping eachother just to verify they are still connected.
+    ping = {
+        from: - sender's user ID
+        to: - recipient's user ID, or "all" to ping all CLIENTS
+    }
+    pong = {
+        from: - sender's ID (i.e. recpient of the original ping)
+    }
+
+TwoteHost states
+    -"waiting" - ping each user and wait for them to pong. either they timeout and are kicked
+                 or they pong and join the round.
+
+DbCommunicator events
+    -"playersChanged" - list of all players changed
+    -"activePlayersChanged" - list of active players changed
+    -"hostChanged" - host has changed
+
+Database:
+    room - node containing ephemeral room data.
+        users-active - Users participating in current round. Value is {user: userID}
+        users-present - key is userID, value is {displayName: string}
+        chatMessages - 
+        currentRound - houses current round's requests and events
+            requests (client to server message)
+            events (server to client message)
+        host (string) - host userID
+        ping (list of {from, to}) - ping from one user to another
+        pong (list of {from}) - responses to pings
