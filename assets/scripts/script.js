@@ -1,4 +1,4 @@
- 
+
 var debugOptions = {
     allowDebugUser: true,
 };
@@ -359,11 +359,13 @@ function DbCommunicator(autoAuth, autoconnect) {
         var data = childSnapshot.val();
         // todo: ping host
         this.client.handlePing(data);
+        this.host.handlePong(data);
     }
     DbCommunicator.prototype.on_pong_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
         // todo: pong host
         this.client.handlePong(data);
+        this.host.handlePong(data);
     }
 
     // DbCommunicator.prototype.on_pingMessages_childAdded = function (childSnapshot) {
@@ -395,25 +397,7 @@ function DbCommunicator(autoAuth, autoconnect) {
     };
 }
 { // DBCommunicator - Ping
-    DbCommunicator.prototype.pingInterval = function () {
-        //todo: watch host ping. if host, watch client pings.
-    };
-    // /** Returns a promise that resolves */ 
-    // DbCommunicator.prototype.sendPing = function(user) {
-    //     var data = {user: user};
-    //     this.nodes.ping.push(data);
-    // }
 
-    // DbCommunicator.prototype.pingPromise = function(userID, timeout) {
-    //     var self = this;
-
-    //     return $.when(function(){
-    //         var def = $.Deferred();
-
-    //     });
-
-
-    // }
 }
 
 /** Implements game server logic. Only the host browser utilizes this class. 
@@ -495,6 +479,8 @@ function TwoteHost(dbcomm) {
         // pong if I'm the target (can server be the target?)
     }
     TwoteHost.prototype.handlePong = function (data) {
+        if(!this.connected) return;
+
         var userID = data.from;
 
         var index = this.pingList.indexOf(userID);
@@ -542,18 +528,19 @@ function TwoteClient(dbcomm) {
     this.hostPingTime = 0;
     this.hostPingNext = twoteConfig.hostPingTimeout;
 
-    this.pingInterval = setInterval(this.pingCheck.bind(this), 1000); // once a second
 }
 {
     TwoteClient.prototype.joinRoom = function () {
         this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ displayName: this.dbComm.user });
         this.connected = true;
 
-        setInterval(this.pingInterval.bind(this), 1000);
+        this.pingInterval = setInterval(this.pingCheck.bind(this), 1000); // once a second
     }
 
     /** Responds to a ping if necessary */
     TwoteClient.prototype.handlePing = function (data) {
+        if(!this.connected) return;
+        
         var toMe = (data.to == this.dbComm.userID) || (data.to == "all");
         if (toMe) {
             this.dbComm.sendPong();
@@ -562,6 +549,8 @@ function TwoteClient(dbcomm) {
 
     /** Accepts notifications of ping responses. */
     TwoteClient.prototype.handlePong = function (data) {
+        if(!this.connected) return;
+
         if (data.from == this.dbComm.cached.host) {
             this.hostPingTime = 0;
             this.hostPingNext = twoteConfig.hostPingTimeout;
