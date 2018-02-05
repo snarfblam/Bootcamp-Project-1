@@ -1,16 +1,11 @@
-
+ 
 var debugOptions = {
     allowDebugUser: true,
 };
-<<<<<<< HEAD
 var twoteConfig = {
     hostPingTimeout: 10, // seconds
     userPingTimeout: 10, // seconds
     hostPremptivePing: 8, // seconds
-=======
-twoteConfig = {
-    hostPingTimeout: 15, // seconds
->>>>>>> 951bc9acd144f10b1d81b296a13dc0f30bf680de
 };
 
 
@@ -195,11 +190,7 @@ function DbCommunicator(autoAuth, autoconnect) {
         this.chatMessages = new EventObject();
 
         this.nodes = {
-<<<<<<< HEAD
             leaderboard: this.database.ref("leaderboard"),
-=======
-            leaderboard: this.database.ref("room/leaderboard"),
->>>>>>> 951bc9acd144f10b1d81b296a13dc0f30bf680de
             activePlayers: this.database.ref("room/users-active"),
             allPlayers: this.database.ref("room/users-present"),
             chatMessages: this.database.ref("room/chat"),
@@ -282,7 +273,6 @@ function DbCommunicator(autoAuth, autoconnect) {
         });
     }
 
-    setInterval(this.pingInterval.bind(this), 1000);
 }
 {  // DbCommunicator - general
 
@@ -308,11 +298,7 @@ function DbCommunicator(autoAuth, autoconnect) {
     DbCommunicator.prototype.usurpRoom = function () {
         // There should probably be something involving a transaction here to avoid a race condition
         // between multiple clients.
-<<<<<<< HEAD
         this.nodes.host.set(this.userID);
-=======
-        this.nodes.host.push(this.userID);
->>>>>>> 951bc9acd144f10b1d81b296a13dc0f30bf680de
         this.sendPong();
 
         alert("We're taking over!");
@@ -376,7 +362,6 @@ function DbCommunicator(autoAuth, autoconnect) {
     }
     DbCommunicator.prototype.on_pong_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
-<<<<<<< HEAD
         // todo: pong host
         this.client.handlePong(data);
     }
@@ -393,17 +378,6 @@ function DbCommunicator(autoAuth, autoconnect) {
     //     this.client.handlePong(data);
     // }
 
-=======
-        // todo: ping host
-        this.client.handlePing(data);
-    }
-
-    DbCommunicator.prototype.on_pongMessages_childAdded = function (childSnapshot) {
-        var data = childSnapshot.val();
-        // todo: pong host
-        this.client.handlePong(data);
-    }
->>>>>>> 951bc9acd144f10b1d81b296a13dc0f30bf680de
     DbCommunicator.prototype.on_activePlayers_value = function (snapshot) {
         this.cached.activePlayers = snapshot.val() || {};
         this.raise("activePlayersChanged", this.cached.activePlayers);
@@ -459,7 +433,6 @@ function TwoteHost(dbcomm) {
         playersChanged: this.dbComm_playersChanged.bind(this),
     });
 
-    setInterval(this.pingCheck.bind(this), 1000); // once per second
 }
 {
     TwoteHost.states = {
@@ -467,7 +440,6 @@ function TwoteHost(dbcomm) {
     };
 
     TwoteHost.prototype.joinRoom = function () {
-<<<<<<< HEAD
         // Heeeere's Johnny!
         this.dbComm.nodes.host.set(this.dbComm.userID);
         // Re-initialize the room.
@@ -478,7 +450,10 @@ function TwoteHost(dbcomm) {
         this.dbComm.nodes.pong.set(null);
 
         this.state = TwoteHost.states.waiting;
+        this.connected = true;
         this.pingAllUsers();
+
+        setInterval(this.pingCheck.bind(this), 1000); // once per second
     }
 
     TwoteHost.prototype.pingAllUsers = function () {
@@ -494,23 +469,23 @@ function TwoteHost(dbcomm) {
     }
     TwoteHost.prototype.pingCheck = function () {
         // Periodically pong users without them pinging us, to reduce unnecessary pinging
-        this.preemtivePongTime --;
-        if(this.preemtivePongTime <= 0) {
+        this.preemtivePongTime--;
+        if (this.preemtivePongTime <= 0) {
             this.preemtivePongTime = twoteConfig.hostPremptivePing;
             this.dbComm.sendPong();
         }
 
         var limit = twoteConfig.userPingTimeout;
 
-        if(this.userPingNext > 0) {
-            this.userPingNext --;
-            if(this.userPingNext == 0) {
+        if (this.userPingNext > 0) {
+            this.userPingNext--;
+            if (this.userPingNext == 0) {
                 this.pingAllUsers();
             }
         } else {
             this.userPingTime++;
 
-            if(this.userPingTime >= limit) {
+            if (this.userPingTime >= limit) {
                 // kick all unponged users
             }
         }
@@ -555,9 +530,6 @@ function TwoteHost(dbcomm) {
         if (this.state == TwoteHost.states.waiting) {
             this.beginRound();
         }
-=======
-        this.dbComm.host = this.dbComm.userID;
->>>>>>> 951bc9acd144f10b1d81b296a13dc0f30bf680de
     }
 }
 
@@ -567,20 +539,17 @@ function TwoteClient(dbcomm) {
     /** @type {DbCommunicator} */
     this.dbComm = dbcomm;
     this.connected = false;
-<<<<<<< HEAD
     this.hostPingTime = 0;
     this.hostPingNext = twoteConfig.hostPingTimeout;
-=======
-    this.hostPingTime = false;
->>>>>>> 951bc9acd144f10b1d81b296a13dc0f30bf680de
 
     this.pingInterval = setInterval(this.pingCheck.bind(this), 1000); // once a second
 }
 {
     TwoteClient.prototype.joinRoom = function () {
-        // Joining is as simple as putting oneself on the list
         this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ displayName: this.dbComm.user });
         this.connected = true;
+
+        setInterval(this.pingInterval.bind(this), 1000);
     }
 
     /** Responds to a ping if necessary */
@@ -595,10 +564,7 @@ function TwoteClient(dbcomm) {
     TwoteClient.prototype.handlePong = function (data) {
         if (data.from == this.dbComm.cached.host) {
             this.hostPingTime = 0;
-<<<<<<< HEAD
             this.hostPingNext = twoteConfig.hostPingTimeout;
-=======
->>>>>>> 951bc9acd144f10b1d81b296a13dc0f30bf680de
         }
     }
 
@@ -606,7 +572,6 @@ function TwoteClient(dbcomm) {
     TwoteClient.prototype.pingCheck = function (data) {
         if (!this.dbComm.host.connected) { // host can't time out of we're the host
             var limit = twoteConfig.hostPingTimeout;
-<<<<<<< HEAD
 
             if (this.hostPingNext > 0) {
                 // count down delay between pings
@@ -615,7 +580,7 @@ function TwoteClient(dbcomm) {
                     this.hostPingTime = 0;
                     this.dbComm.sendPing(this.dbComm.cached.host);
                 }
-            } else  {
+            } else {
                 this.hostPingTime++;
                 console.log(this.hostPingTime);
 
@@ -623,17 +588,6 @@ function TwoteClient(dbcomm) {
                     this.hostPingTime = 0; // don't keep usurping. you onnly need to usurp once.
                     this.dbComm.usurpRoom();
                 }
-=======
-            this.hostPingTime++;
-
-            if (this.hostPingTime == limit) {
-                this.dbComm.sendPing(this.dbComm.cached.host);
-            }
-
-            if (this.hostPingTime >= limit * 2) {
-                this.hostPingTime = 0; // don't keep usurping. you onnly need to usurp once.
-                this.dbComm.usurpRoom();
->>>>>>> 951bc9acd144f10b1d81b296a13dc0f30bf680de
             }
         }
     }
