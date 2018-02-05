@@ -38,3 +38,34 @@ Database:
         host (string) - host userID
         ping (list of {from, to}) - ping from one user to another
         pong (list of {from}) - responses to pings
+
+Messages (requests/events) sent between host and clients via firebase:
+    Overall game flow:
+        readyToBegin (event) - ready to start a round as soon as all clients respond to a ping
+        roundStart (event) - A round has begun
+        {   tweet: text of tweet
+            option1:-option4: the four people that might have sent the tweet
+        }
+        guessMade (request->event) - A user has made a guessMade
+        {   user: userID
+            guess: user's guess (number 1 - 4)
+        }
+        roundOver (event) - All users have guessed and correct answer is revealed
+        {   correctAnswer: number 1- 4
+        }
+    User events:
+        userLeft (event) - host has removed a user (e.g. ping timeout)
+        {   user: userID
+            reason: "ping" (timeout), "part" (user closed page)
+            wasHost: true/false - whether the user that left was the host. if it was the host, the host
+                                  will have set the value of the "newHost" node to nominate a new host.
+                                  the new host will reset the room.
+        }
+    Other events:
+        chat (request->event) - user sent a chat message
+        takeover (event) - if the host does not respond to a ping for too long, this message is sent.
+        {                  it's a warning that the room is going to be reset with a new host. Clients will
+        }                  be given a moment to display a message to the user that the host pinged out.
+                           This event is sent directly from the client taking over. To avoid race conditions
+                           (multiple clients trying to take over at same time), the client will attempt to sent
+                           the "newHost" node from null to the user's ID transactionally.
