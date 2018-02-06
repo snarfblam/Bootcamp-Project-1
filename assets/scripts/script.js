@@ -441,6 +441,8 @@ function TwoteHost(dbComm) {
 { // General
     TwoteHost.states = {
         waiting: "waiting",
+        playing: "playing",
+        roundOver: "roundOver",
     };
 
     /** Connects to the game as the host */
@@ -487,9 +489,9 @@ function TwoteHost(dbComm) {
             return Promise.resolve({
                 question: "placeholder tweet",
                 option1: "placeholder twit 1",
-                option1: "placeholder twit 2",
-                option1: "placeholder twit 3",
-                option1: "placeholder twit 4",
+                option2: "placeholder twit 2",
+                option3: "placeholder twit 3",
+                option4: "placeholder twit 4",
                 correctAnswer: 1,
             });
         }
@@ -500,7 +502,7 @@ function TwoteHost(dbComm) {
 { // Game logic
     TwoteHost.prototype.getReadyForRound = function (args) {
         // include all present players in the round
-        this.dbComm.nodes.activePlayers.push(this.dbComm.nodes.allPlayers);
+        this.dbComm.nodes.activePlayers.set(this.dbComm.cached.allPlayers);
 
         this.state = TwoteHost.states.waiting;
         this.pingAllUsers();
@@ -508,6 +510,8 @@ function TwoteHost(dbComm) {
     }
 
     TwoteHost.prototype.beginRound = function() {
+        this.state = TwoteHost.states.playing;
+
         var self = this;
         this.getNextQuestion().then(function(result){
             self.currentTweet = result.question;
@@ -517,7 +521,7 @@ function TwoteHost(dbComm) {
                 result.option3,
                 result.option4,
             ];
-            self.correctOption = result.correctOption;
+            self.correctOption = result.correctAnswer;
 
             var eventArgs = {
                 tweet: self.currentTweet,
@@ -533,6 +537,8 @@ function TwoteHost(dbComm) {
 
     TwoteHost.prototype.handleAllGuessesMade = function() {
         var self = this;
+
+        this.state = TwoteHost.states.roundOver;
 
         this.dbComm.sendEvent(twoteMessages.roundOver, {
             correctAnswer: self.correctOption,
@@ -718,15 +724,15 @@ function TwoteClient(dbComm) {
         return {
             question: this.currentTweet,
             option1: this.currentOptions[0] || "option 1 missing",
-            option1: this.currentOptions[1] || "option 2 missing",
-            option1: this.currentOptions[2] || "option 3 missing",
-            option1: this.currentOptions[3] || "option 4 missing",
+            option2: this.currentOptions[1] || "option 2 missing",
+            option3: this.currentOptions[2] || "option 3 missing",
+            option4: this.currentOptions[3] || "option 4 missing",
         };
     }
 
-    TwoteClient.prototype.userGuessed = function(userID, answer) {
+    TwoteClient.prototype.userGuessed = function(answer) {
         this.dbComm.sendRequest(twoteMessages.guessMade, {
-            user: userID,
+            user: this.dbComm.userID,
             guess: answer,
         });
     }
@@ -744,7 +750,7 @@ function TwoteClient(dbComm) {
             readyToBegin: this.evt_readyToBegin.bind(this),
             roundStart: this.evt_roundStart.bind(this),
             guessMade: this.evt_guessMade.bind(this),
-            roundOver: this.evt_guessMade.bind(this),
+            roundOver: this.evt_roundOver.bind(this),
             userLeft: this.evt_userLeft.bind(this),
             takeover: this.evt_takeover.bind(this),
         });
