@@ -511,6 +511,7 @@ function TwoteHost(dbComm) {
 
     TwoteHost.prototype.beginRound = function() {
         this.state = TwoteHost.states.playing;
+        this.guesses = {};
 
         var self = this;
         this.getNextQuestion().then(function(result){
