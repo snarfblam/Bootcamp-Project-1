@@ -21,6 +21,7 @@ pinging:
 TwoteHost states
     -"waiting" - ping each user and wait for them to pong. either they timeout and are kicked
                  or they pong and join the round.
+    - (moreToCome)
 
 DbCommunicator events
     -"playersChanged" - list of all players changed
@@ -56,6 +57,7 @@ Messages (requests/events) sent between host and clients via firebase:
     User events:
         userLeft (event) - host has removed a user (e.g. ping timeout)
         {   user: userID
+            displayName: display name
             reason: "ping" (timeout), "part" (user closed page)
             wasHost: true/false - whether the user that left was the host. if it was the host, the host
                                   will have set the value of the "newHost" node to nominate a new host.
@@ -65,7 +67,7 @@ Messages (requests/events) sent between host and clients via firebase:
         chat (request->event) - user sent a chat message
         takeover (event) - if the host does not respond to a ping for too long, this message is sent.
         {                  it's a warning that the room is going to be reset with a new host. Clients will
-        }                  be given a moment to display a message to the user that the host pinged out.
+                           be given a moment to display a message to the user that the host pinged out.
                            This event is sent directly from the client taking over. To avoid race conditions
                            (multiple clients trying to take over at same time), the client will attempt to sent
                            the "newHost" node from null to the user's ID transactionally.

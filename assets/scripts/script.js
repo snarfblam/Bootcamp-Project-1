@@ -400,6 +400,16 @@ function DbCommunicator(autoAuth, autoconnect) {
 
 }
 
+var twoteMessages =  {
+    readyToBegin: "readyToBegin",
+    roundStart: "roundStart",
+    guessMade: "guessMade",
+    roundOver: "roundOver",
+    userLeft: "userLeft",
+    chat: "chat",
+    takeover: "takeover",
+};
+
 /** Implements game server logic. Only the host browser utilizes this class. 
  * @constructor */
 function TwoteHost(dbcomm) {
@@ -423,6 +433,7 @@ function TwoteHost(dbcomm) {
         waiting: "waiting",
     };
 
+    /** Connects to the game as the host */
     TwoteHost.prototype.joinRoom = function () {
         // Heeeere's Johnny!
         this.dbComm.nodes.host.set(this.dbComm.userID);
@@ -440,6 +451,7 @@ function TwoteHost(dbcomm) {
         setInterval(this.pingCheck.bind(this), 1000); // once per second
     }
 
+    /** Pings all users and prepares for their responses */
     TwoteHost.prototype.pingAllUsers = function () {
         var pingList = this.pingList = [];
         this.userPingTime2 = 0;
@@ -451,6 +463,8 @@ function TwoteHost(dbcomm) {
 
         this.dbComm.sendPing("all");
     }
+
+    /** Periodic function that sends pings or processes timeouts when appropriate */
     TwoteHost.prototype.pingCheck = function () {
         // Periodically pong users without them pinging us, to reduce unnecessary pinging
         this.preemtivePongTime--;
@@ -483,10 +497,25 @@ function TwoteHost(dbcomm) {
             }
         }
     }
-    TwoteHost.prototype.kickTimedOutUserhandlePing = function (user) {
+
+    TwoteHost.prototype.kickTimedOutUserhandlePing = function (userID) {
+        var user = this.dbComm.cached.allPlayers[userID]  || {};
+        var displayName = userID.displayName || "[display name not found]";
+
+        // remove from active users and all users, send userLeft event
+        this.dbComm.nodes.activePlayers.child(userID).set(null);
+        this.dbComm.nodes.allPlayers.child(userID).set(null);
+
+        this.dbComm.sendEvent(twoteMessages.userLeft, {
+            user: userID,
+            displayName: displayName,
+            reason: "ping",
+            wasHost: false,
+        });
     }
+    
     TwoteHost.prototype.handlePing = function (data) {
-        // pong if I'm the target (can server be the target?)
+        // don't do anything... the client will respond to pings to this browser
     }
     TwoteHost.prototype.handlePong = function (data) {
         if (!this.connected) return;
@@ -503,7 +532,17 @@ function TwoteHost(dbcomm) {
         }
     }
 
+    TwoteHost.prototype.handleAllPlayersPonged = function () {
+        this.userPingNext = twoteConfig.userPingTimeout;
+        this.userPingTime = 0;
+
+        if (this.state == TwoteHost.states.waiting) {
+            this.beginRound();
+        }
+    }
+
     TwoteHost.prototype.dbComm_playersChanged = function () {
+        // if a player left without ponging, don't want to wait forever
         if (this.pingList.length == 0) return;
 
         var allPlayers = Dic.getKeys(this.dbComm.cached.allPlayers);
@@ -519,14 +558,6 @@ function TwoteHost(dbcomm) {
         if (this.pingList.length == 0) this.handleAllPlayersPonged();
     }
 
-    TwoteHost.prototype.handleAllPlayersPonged = function () {
-        this.userPingNext = twoteConfig.userPingTimeout;
-        this.userPingTime = 0;
-
-        if (this.state == TwoteHost.states.waiting) {
-            this.beginRound();
-        }
-    }
 }
 
 /** Implements client logic. All browsers utilize this calss.
