@@ -247,8 +247,9 @@ function DbCommunicator(autoAuth, autoconnect) {
                     //throw Error("Not authenticated.");
                     if (debugOptions.allowDebugUser && window.location.protocol == "file:") {
                         // local machine debugging
-                        self.user = "testUser";
-                        self.userID = "0xDEADBEEF_" + Math.floor(Math.random() * 1000);
+                        var randy = Math.floor(Math.random() * 1000);
+                        self.user = "testUser_" + randy; 
+                        self.userID = "0xDEADBEEF_" + randy;
                     } else {
                         self.auth.signInWithRedirect();
                         autoconnect = false;
@@ -498,6 +499,9 @@ function TwoteHost(dbComm) {
 }
 { // Game logic
     TwoteHost.prototype.getReadyForRound = function (args) {
+        // include all present players in the round
+        this.dbComm.nodes.activePlayers.push(this.dbComm.nodes.allPlayers);
+
         this.state = TwoteHost.states.waiting;
         this.pingAllUsers();
         this.dbComm.sendEvent(twoteMessages.readyToBegin);

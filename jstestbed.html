@@ -6,14 +6,54 @@
     <title>JS Test bed</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-        crossorigin="anonymous"></script>
-    <script src="https://www.gstatic.com/firebasejs/4.9.0/firebase.js"></script>
-    <script src="assets/scripts/script.js"></script>
+    <script type="text/javascript">
+         function roundBegin(){
+             var q = getCurrentQuestion();
+            $("#tweet").text(q.question);
+            $("#q1").text(q.option1);
+            $("#q2").text(q.option2);
+            $("#q3").text(q.option3);
+            $("#q4").text(q.option4);
+
+            var pDiv = $("#players");
+            var p = getActivePlayers();
+            p.forEach(function(player){
+                var box = $("<p><span class='marker'></span> <span class='name'></span></p>");
+                box.find(".name").text(player.displayName + " / " + player.userID);
+                box.attr("id", player.userID);
+
+                pDiv.append(box);
+            });
+         }
+
+         function userMadeGuess(userID, guess) {
+            $("#" + userID).find(".marker").text(guess);
+         }
+
+         function roundEnd(answer) {
+            var elem = $("#q" + answer);
+            elem.text(elem.text() + " <--");
+         }
+
+         function userKicked(userID, reason) {
+
+         }
+    </script>
 </head>
 
 <body>
 
+    <p id="tweet"></p>
+    <p id="q1"></p>
+    <p id="q2"></p>
+    <p id="q3"></p>
+    <p id="q4"></p>
+    <div id="#players"></div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+        crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.9.0/firebase.js"></script>
+    <script src="assets/scripts/script.js"></script>
 </body>
 
 </html>
