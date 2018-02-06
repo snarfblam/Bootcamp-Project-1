@@ -483,7 +483,7 @@ function TwoteHost(dbComm) {
     
     /** Returns a promise that resolves to {question, option1, option2, option3, option4, correctAnswer} */
     TwoteHost.prototype.getNextQuestion = function() {
-        if(!getNextQuestion) {
+        if(!window.getNextQuestion) {
             return Promise.resolve({
                 question: "placeholder tweet",
                 option1: "placeholder twit 1",
@@ -838,20 +838,20 @@ function TwoteClient(dbComm) {
 }
 { // UI component wrappers
     TwoteClient.prototype.ui_userKicked = function (userID, reason) {
-        if (userKicked) {
+        if (window.userKicked) {
             userKicked(userID, reason);
         }
     }
     TwoteClient.prototype.ui_roundBegin = function () {
-        if (roundBegin) roundBegin();
+        if (window.roundBegin) roundBegin();
     }
     TwoteClient.prototype.ui_userMadeGuess = function (id, guess) {
-        if (userMadeGuess) {
+        if (window.userMadeGuess) {
             userMadeGuess(id, guess);
         }
     }
     TwoteClient.prototype.ui_roundEnd = function (answerNum) {
-        if (roundEnd) {
+        if (window.roundEnd) {
             roundEnd(answerNum);
         }
     }
