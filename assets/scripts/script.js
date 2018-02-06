@@ -684,6 +684,10 @@ var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13", "T
 function getTweeterData() {
     var reader = new TwitterReader();
     var user = tweeters[Math.floor(Math.random() * tweeters.length)]
+    reader.fetchTweets(user,1).then(function(response){
+        var result = response;
+        console.log(response);
+    })
 
     // fetchTweets returns a promise. You need to do something like:
     // reader.fetchTweets(user, 1)
@@ -699,5 +703,3 @@ function getTweeterData() {
     //     handle: tweetObj.username
     // }
 }
-
-console.log(getTweeterData())
