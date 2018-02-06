@@ -1,15 +1,20 @@
-.collection {
+/*.collection {
 	
 	width:500px;
 
 }
+*/
 
-
-img{
-	width:200px;
-	height:250px;
-}
 
 #twitterQuote{
 	font-size: 24px;
+	background-color: #55aacc;
+
+}
+.answer{
+	display: inline-block;
+}
+.profimg{
+	width:100px !important;
+	height:100px !important;
 }
