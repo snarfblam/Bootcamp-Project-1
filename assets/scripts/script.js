@@ -303,8 +303,10 @@ function DbCommunicator(autoAuth, autoconnect) {
         this.nodes.host.set(this.userID);
         this.sendPong();
 
-        alert("We're taking over!");
-        // todo: take over. sent event message that host timed out, wait a beat, and re-initialize the room, leaving all-users list intact
+        var self = this;
+        setTimeout(function() {
+            self.host.joinRoom();
+        }, 250);
     }
 }
 { // DbCommunicator - Send and receive from firebase
@@ -359,28 +361,17 @@ function DbCommunicator(autoAuth, autoconnect) {
 
     DbCommunicator.prototype.on_ping_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
-        // todo: ping host
+
         this.client.handlePing(data);
         this.host.handlePong(data);
     }
     DbCommunicator.prototype.on_pong_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
-        // todo: pong host
+
         this.client.handlePong(data);
         this.host.handlePong(data);
     }
 
-    // DbCommunicator.prototype.on_pingMessages_childAdded = function (childSnapshot) {
-    //     var data = childSnapshot.val();
-    //     // todo: ping host
-    //     this.client.handlePing(data);
-    // }
-
-    // DbCommunicator.prototype.on_pongMessages_childAdded = function (childSnapshot) {
-    //     var data = childSnapshot.val();
-    //     // todo: pong host
-    //     this.client.handlePong(data);
-    // }
 
     DbCommunicator.prototype.on_activePlayers_value = function (snapshot) {
         this.cached.activePlayers = snapshot.val() || {};
