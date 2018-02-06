@@ -414,9 +414,9 @@ var twoteMessages = {
 
 /** Implements game server logic. Only the host browser utilizes this class. 
  * @constructor */
-function TwoteHost(dbcomm) {
+function TwoteHost(dbComm) {
     /** @type {DbCommunicator} */
-    this.dbComm = dbcomm;
+    this.dbComm = dbComm;
     this.connected = false;
     this.state = TwoteHost.states.waiting;
 
@@ -547,6 +547,17 @@ function TwoteHost(dbcomm) {
             self.getReadyForRound();
         }, twoteConfig.timeBetweenQuestions * 1000);
     }
+
+
+    TwoteHost.prototype.checkIfAllGuessesIn = function() {
+        var activeUserCount = Dic.getKeys(this.dbComm.cached.activePlayers).length;
+        var guessedUserCount = Dic.getKeys(this.guesses).length;
+        var allGuessesIn = (activeUserCount == guessedUserCount);
+
+        if(allGuessesIn){
+            this.handleAllGuessesMade();
+        }
+    }
 }
 { // Request/event handlers
     TwoteHost.prototype.req_guessMade = function (args) {
@@ -560,9 +571,9 @@ function TwoteHost(dbcomm) {
         // echo to clients
         this.dbComm.sendEvent(twoteMessages.guessMade, args);
 
-        // todo: handle situation of all users having guessed
-        // this.handleAllGuessesMade
+        this.checkIfAllGuessesIn();
     }
+
 
     TwoteHost.prototype.evt_takeover = function (args) {
         // apparently a client thinks we pinged out and is taking over.
@@ -634,6 +645,8 @@ function TwoteHost(dbcomm) {
             reason: "ping",
             wasHost: false,
         });
+
+        this.checkIfAllGuessesIn();
     }
 
     TwoteHost.prototype.handlePing = function (data) {
@@ -684,9 +697,9 @@ function TwoteHost(dbcomm) {
 
 /** Implements client logic. All browsers utilize this calss.
  * @constructor */
-function TwoteClient(dbcomm) {
+function TwoteClient(dbComm) {
     /** @type {DbCommunicator} */
-    this.dbComm = dbcomm;
+    this.dbComm = dbComm;
     this.connected = false;
     this.hostPingTime = 0;
     this.hostPingNext = twoteConfig.hostPingTimeout;
