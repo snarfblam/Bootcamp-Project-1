@@ -491,6 +491,17 @@ function TwoteHost(dbcomm) {
     
     /** Returns a promise that resolves to {question, option1, option2, option3, option4, correctAnswer} */
     TwoteHost.prototype.getNextQuestion = function() {
+        if(!getNextQuestion) {
+            return Promise.resolve({
+                question: "placeholder tweet",
+                option1: "placeholder twit 1",
+                option1: "placeholder twit 2",
+                option1: "placeholder twit 3",
+                option1: "placeholder twit 4",
+                correctAnswer: 1,
+            });
+        }
+
         return getNextQuestion();
     }
 }
