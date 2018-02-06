@@ -58,3 +58,46 @@ function leaderboardHistoryPull(date){
 }
 leaderboardPull();
 leaderboardHistoryPull("180131")
+
+min = minimun scorer in the leaderboard 
+	if (player1 > min){
+		remove min from leadedboard add min to leaderboard
+	}
+	min = minimun scorer in the leaderboard 
+	if (player2 > min){
+		remove min from leadedboard add min to leader board
+	}
+	min = minimun scorer in the leaderboard 
+	if (player3 > min){
+		remove min from leadedboard add min to leader board
+	}
+	min = minimun scorer in the leaderboard 
+	if (player4 > min){
+		remove min from leadedboard add min to leader board
+	}
+	min = minimun scorer in the leaderboard 
+	if (player5 > min){
+		remove min from mleadedboard add min to leader board
+	}
+	min = minimun scorer in the leaderboard 
+	if (player6 > min){
+		remove min from leadedboard add min to leader board
+	}
+	min = minimun scorer in the leaderboard 
+	if (player7 > min){
+		remove min from leadedboard add min to leader board
+	}
+	min = minimun scorer in the leaderboard 
+	if (player8 > min){
+		remove min from leadedboard add min to leader board
+	}
+	min = minimun scorer in the leaderboard 
+	if (player9 > min){
+		remove min from leadedboard add min to leader board
+	}
+	min = minimun scorer in the leaderboard 
+	if (player10 > min){
+		remove min from leadedboard add min to leader board
+	};
+
+	
