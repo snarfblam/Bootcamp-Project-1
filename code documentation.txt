@@ -66,7 +66,7 @@ Messages (requests/events) sent between host and clients via firebase:
     Other events:
         chat (request->event) - user sent a chat message
         takeover (event) - if the host does not respond to a ping for too long, this message is sent.
-        {                  it's a warning that the room is going to be reset with a new host. Clients will
+        {}                 it's a warning that the room is going to be reset with a new host. Clients will
                            be given a moment to display a message to the user that the host pinged out.
                            This event is sent directly from the client taking over. To avoid race conditions
                            (multiple clients trying to take over at same time), the client will attempt to sent

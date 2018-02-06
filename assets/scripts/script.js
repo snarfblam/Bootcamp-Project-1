@@ -6,6 +6,7 @@ var twoteConfig = {
     hostPingTimeout: 10, // seconds
     userPingTimeout: 10, // seconds
     hostPremptivePing: 8, // seconds
+    timeBetweenQuestions: 6, // seconds
 };
 
 
@@ -175,7 +176,7 @@ function DbCommunicator(autoAuth, autoconnect) {
             messagingSenderId: "736508559692"
         };
         /** firebase.app.App object */
-        
+
         this.app = firebase.initializeApp(config);
         this.database = firebase.database();
 
@@ -424,12 +425,28 @@ function TwoteHost(dbcomm) {
     this.userPingNext = twoteConfig.userPingTimeout;
     this.preemtivePongTime = twoteConfig.hostPremptivePing;
 
+    this.currentTweet = "";
+    this.currentOptions = "";
+    this.correctOption = 1;
+
+    this.guesses = {
+        // [userID]: number (1 to 4)
+    };
+
+    // These event handlers are not actually registered until .joinRoom is called
+    this.requestHandlers = {
+        guessMade: this.req_guessMade.bind(this),
+    };
+    this.eventHandlers = {
+        takeover: this.evt_takeover.bind(this),
+    }
+
     this.dbComm.on({
         playersChanged: this.dbComm_playersChanged.bind(this),
     });
 
 }
-{
+{ // General
     TwoteHost.states = {
         waiting: "waiting",
     };
@@ -445,12 +462,105 @@ function TwoteHost(dbcomm) {
         this.dbComm.nodes.ping.set(null);
         this.dbComm.nodes.pong.set(null);
 
-        this.state = TwoteHost.states.waiting;
         this.connected = true;
-        this.pingAllUsers();
+
+        this.dbComm.requests.on(this.requestHandlers);
+        this.dbComm.events.on(this.eventHandlers);
 
         setInterval(this.pingCheck.bind(this), 1000); // once per second
+
+        this.getReadyForRound();
     }
+
+    TwoteHost.prototype.disconnect = function () {
+        this.connected = false;
+
+        // unwire request/event handlers
+        var self = this;
+        Dic.forEachKey(this.eventHandlers, function (key) {
+            Dic.remove(self.eventHandlers, key);
+        });
+        Dic.forEachKey(this.requestHandlers, function (key) {
+            Dic.remove(self.requestHandlers, key);
+        });
+    }
+
+    TwoteHost.prototype.initTwitter = function () {
+        initTwitter();
+    }
+    
+    /** Returns a promise that resolves to {question, option1, option2, option3, option4, correctAnswer} */
+    TwoteHost.prototype.getNextQuestion = function() {
+        return getNextQuestion();
+    }
+}
+{ // Game logic
+    TwoteHost.prototype.getReadyForRound = function (args) {
+        this.state = TwoteHost.states.waiting;
+        this.pingAllUsers();
+        this.dbComm.sendEvent(twoteMessages.readyToBegin);
+    }
+
+    TwoteHost.prototype.beginRound = function() {
+        var self = this;
+        this.getNextQuestion().then(function(result){
+            self.currentTweet = result.question;
+            self.currentOptions = [
+                result.option1,
+                result.option2,
+                result.option3,
+                result.option4,
+            ];
+            self.correctOption = result.correctOption;
+
+            var eventArgs = {
+                tweet: self.currentTweet,
+                option1: result.option1,
+                option2: result.option2,
+                option3: result.option3, 
+                option4: result.option4,
+            };
+
+            self.dbComm.sendEvent(twoteMessages.roundStart, eventArgs);
+        });
+    }
+
+    TwoteHost.prototype.handleAllGuessesMade = function() {
+        var self = this;
+
+        this.dbComm.sendEvent(twoteMessages.roundOver, {
+            correctAnswer: self.correctOption,
+        });
+
+        setTimeout(function(){
+            self.getReadyForRound();
+        }, twoteConfig.timeBetweenQuestions * 1000);
+    }
+}
+{ // Request/event handlers
+    TwoteHost.prototype.req_guessMade = function (args) {
+        // record guess.
+        var userID = args.user || "unknownUser";
+        var guess = args.guess || 1;
+        if (typeof guess == "string") guess = parseInt(guess);
+
+        this.guesses[userID] = guess;
+
+        // echo to clients
+        this.dbComm.sendEvent(twoteMessages.guessMade, args);
+
+        // todo: handle situation of all users having guessed
+        // this.handleAllGuessesMade
+    }
+
+    TwoteHost.prototype.evt_takeover = function (args) {
+        // apparently a client thinks we pinged out and is taking over.
+        // do not fight it.
+        this.disconnect();
+    }
+
+}
+{ // Pinging and user kicking
 
     /** Pings all users and prepares for their responses */
     TwoteHost.prototype.pingAllUsers = function () {
@@ -572,12 +682,53 @@ function TwoteClient(dbcomm) {
     this.currentTweet = "";
     this.currentOptions = ["", "", "", "",];
 }
+{ // Public methods
+
+    /** Gets the current active players */
+    TwoteClient.prototype.getActivePlayers = function () {
+        var result = [];
+        Dic.forEach(this.dbComm.cached.activePlayers, function (key, value) {
+            result.push({ userID: key, displayName: value.displayName });
+        });
+
+        return result;
+    }
+
+    /** Gets the current tweet and potential tweeters */
+    TwoteClient.prototype.getCurrentQuestion =  function() {
+        return {
+            question: this.currentTweet,
+            option1: this.currentOptions[0] || "option 1 missing",
+            option1: this.currentOptions[1] || "option 2 missing",
+            option1: this.currentOptions[2] || "option 3 missing",
+            option1: this.currentOptions[3] || "option 4 missing",
+        };
+    }
+
+    TwoteClient.prototype.userGuessed = function(userID, answer) {
+        this.dbComm.sendRequest(twoteMessages.guessMade, {
+            user: userID,
+            guess: answer,
+        });
+    }
+
+
+}
 { // Pinging, join and part
     TwoteClient.prototype.joinRoom = function () {
         this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ displayName: this.dbComm.user });
         this.connected = true;
 
         this.pingInterval = setInterval(this.pingCheck.bind(this), 1000); // once a second
+
+        this.dbComm.events.on({
+            readyToBegin: this.evt_readyToBegin.bind(this),
+            roundStart: this.evt_roundStart.bind(this),
+            guessMade: this.evt_guessMade.bind(this),
+            roundOver: this.evt_guessMade.bind(this),
+            userLeft: this.evt_userLeft.bind(this),
+            takeover: this.evt_takeover.bind(this),
+        });
     }
 
     /** Responds to a ping if necessary */
@@ -641,6 +792,29 @@ function TwoteClient(dbcomm) {
         this.currentOptions.push(args.option2 || "option 2 missing");
         this.currentOptions.push(args.option3 || "option 3 missing");
         this.currentOptions.push(args.option4 || "option 4 missing");
+
+        this.ui_roundBegin();
+    }
+    TwoteClient.prototype.evt_guessMade = function (args) {
+        var id = args.user || "unknown user";
+        var guess = args.guess || 1;
+        if (typeof guess == "string") guess = parseInt(guess);
+        if (!guess) guess = 1;
+
+        this.ui_userMadeGuess(id, guess);
+    }
+    TwoteClient.prototype.evt_roundOver = function (args) {
+        var answer = args.correctAnswer || 1;
+        if (typeof answer == "string") answer = parseInt(answer);
+        if (!answer) answer = 1;
+
+        this.ui_roundEnd(answer);
+    }
+    TwoteClient.prototype.evt_takeover = function (args) {
+        alert("Warning. host timed out!");
+        setTimeout(function () {
+            location.reload(true);
+        }, 500);
     }
 }
 { // UI component wrappers
@@ -649,9 +823,20 @@ function TwoteClient(dbcomm) {
             userKicked(userID, reason);
         }
     }
-    TwoteClient.prototype.uiRoundBegin = function () {
+    TwoteClient.prototype.ui_roundBegin = function () {
         if (roundBegin) roundBegin();
     }
+    TwoteClient.prototype.ui_userMadeGuess = function (id, guess) {
+        if (userMadeGuess) {
+            userMadeGuess(id, guess);
+        }
+    }
+    TwoteClient.prototype.ui_roundEnd = function (answerNum) {
+        if (roundEnd) {
+            roundEnd(answerNum);
+        }
+    }
+
 }
 
 
@@ -689,6 +874,22 @@ function EventObject() {
     };
 }
 
+{   // Public interface
+    var comm = new DbCommunicator(true, true);
+
+    function getActivePlayers() {
+        return comm.client.getActivePlayers();
+    }
+
+    function getCurrentQuestion() {
+        return comm.client.getCurrentQuestion();
+    }
+
+    function userGuessed(userID, answer) {
+        return comm.client.userGuessed(userID, answer);
+    }
+}
+
 // Test code
 $(document).ready(function () {
     var tweeter = new TwitterReader();
@@ -715,7 +916,6 @@ $(document).ready(function () {
     //         $(document.body).append($("<img>").attr("src", "https://robohash.org/" + auth.user.displayName));
     //     });
 
-    var comm = new DbCommunicator(true, true);
     comm.authPromise.then(function (result) {
         console.log(comm.user);
         //console.log(comm.)
