@@ -175,6 +175,7 @@ function DbCommunicator(autoAuth, autoconnect) {
             messagingSenderId: "736508559692"
         };
         /** firebase.app.App object */
+        
         this.app = firebase.initializeApp(config);
         this.database = firebase.database();
 
@@ -400,7 +401,7 @@ function DbCommunicator(autoAuth, autoconnect) {
 
 }
 
-var twoteMessages =  {
+var twoteMessages = {
     readyToBegin: "readyToBegin",
     roundStart: "roundStart",
     guessMade: "guessMade",
@@ -499,7 +500,7 @@ function TwoteHost(dbcomm) {
     }
 
     TwoteHost.prototype.kickTimedOutUserhandlePing = function (userID) {
-        var user = this.dbComm.cached.allPlayers[userID]  || {};
+        var user = this.dbComm.cached.allPlayers[userID] || {};
         var displayName = userID.displayName || "[display name not found]";
 
         // remove from active users and all users, send userLeft event
@@ -513,7 +514,7 @@ function TwoteHost(dbcomm) {
             wasHost: false,
         });
     }
-    
+
     TwoteHost.prototype.handlePing = function (data) {
         // don't do anything... the client will respond to pings to this browser
     }
@@ -568,9 +569,10 @@ function TwoteClient(dbcomm) {
     this.connected = false;
     this.hostPingTime = 0;
     this.hostPingNext = twoteConfig.hostPingTimeout;
-
+    this.currentTweet = "";
+    this.currentOptions = ["", "", "", "",];
 }
-{
+{ // Pinging, join and part
     TwoteClient.prototype.joinRoom = function () {
         this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ displayName: this.dbComm.user });
         this.connected = true;
@@ -620,6 +622,35 @@ function TwoteClient(dbcomm) {
                 }
             }
         }
+    }
+}
+{ // Message handlers
+    TwoteClient.prototype.evt_userLeft = function (args) {
+        var id = args.userID || "unknown user";
+        var reason = args.reason || "unknown reason";
+        this.ui_userKicked(id, reason);
+    }
+    TwoteClient.prototype.evt_readyToBegin = function (args) {
+        // Do nothing? we haven't established a ui function to notify users
+        // host is ready and waiting for pings
+    }
+    TwoteClient.prototype.evt_roundStart = function (args) {
+        this.currentTweet = args.tweet || "tweet missing";
+        this.currentOptions = [];
+        this.currentOptions.push(args.option1 || "option 1 missing");
+        this.currentOptions.push(args.option2 || "option 2 missing");
+        this.currentOptions.push(args.option3 || "option 3 missing");
+        this.currentOptions.push(args.option4 || "option 4 missing");
+    }
+}
+{ // UI component wrappers
+    TwoteClient.prototype.ui_userKicked = function (userID, reason) {
+        if (userKicked) {
+            userKicked(userID, reason);
+        }
+    }
+    TwoteClient.prototype.uiRoundBegin = function () {
+        if (roundBegin) roundBegin();
     }
 }
 
