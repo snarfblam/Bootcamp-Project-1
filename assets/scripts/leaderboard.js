@@ -97,6 +97,8 @@ console.log(userobj[i])
 GrabDailyLeader()
 
 
+
+
 // min = minimun scorer in the leaderboard 
 // 	if (player1 > min){
 // 		remove min from leadedboard add min to leaderboard
