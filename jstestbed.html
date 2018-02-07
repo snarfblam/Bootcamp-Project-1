@@ -63,7 +63,7 @@
         }
 
         function userKicked(userID, reason) {
-
+            $("#" + userID).find(".marker").text("[X]");
         }
 
         $(document).ready(function () {

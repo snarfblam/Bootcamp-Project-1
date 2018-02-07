@@ -485,6 +485,11 @@ function TwoteHost(dbComm) {
 
     /** Connects to the game as the host */
     TwoteHost.prototype.joinRoom = function () {
+        if(this.connected) {
+            console.warn("Attempted to connect host when already connected.");
+            return;
+        }
+
         // Heeeere's Johnny!
         this.dbComm.nodes.host.set(this.dbComm.userID);
         // Re-initialize the room.
@@ -539,6 +544,12 @@ function TwoteHost(dbComm) {
 }
 { // Game logic
     TwoteHost.prototype.getReadyForRound = function (args) {
+        if(this.dbComm.cached.host != this.dbComm.userID){
+            console.warn("I seem to have lost my hosting privileges.");
+            this.disconnect();
+        }
+
+
         // include all present players in the round
         this.dbComm.nodes.activePlayers.set(this.dbComm.cached.allPlayers);
         this.dbComm.nodes.ping.set(null);
@@ -805,6 +816,11 @@ function TwoteClient(dbComm) {
 }
 { // Pinging, join and part
     TwoteClient.prototype.joinRoom = function () {
+        if(this.connected) {
+            console.warn("Attempted to connect client when already connected.");
+            return;
+        }
+
         this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ displayName: this.dbComm.user });
         this.connected = true;
 
@@ -866,7 +882,7 @@ function TwoteClient(dbComm) {
 }
 { // Message handlers
     TwoteClient.prototype.evt_userLeft = function (args) {
-        var id = args.userID || "unknown user";
+        var id = args.user|| "unknown user";
         var reason = args.reason || "unknown reason";
         this.ui_userKicked(id, reason);
     }
