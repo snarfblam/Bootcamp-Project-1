@@ -774,6 +774,8 @@ function TwoteHost(dbComm) {
 /** Implements client logic. All browsers utilize this calss.
  * @constructor */
 function TwoteClient(dbComm) {
+    var self = this;
+
     /** @type {DbCommunicator} */
     this.dbComm = dbComm;
     this.connected = false;
@@ -781,6 +783,14 @@ function TwoteClient(dbComm) {
     this.hostPingNext = twoteConfig.hostPingTimeout;
     this.currentTweet = "";
     this.currentOptions = ["", "", "", "",];
+
+    /** Set to true after all the initial child_added events from joining the game have finished. */ 
+    // To avoid pong spamming the server on join, mainly
+    this.dbChildSyncComplete = false;
+    this.dbComm.nodes.ping.once("value", function() {
+        self.dbChildSyncComplete = true;
+        self.dbComm.sendPong();
+    });
 }
 { // Public methods
 
@@ -841,7 +851,7 @@ function TwoteClient(dbComm) {
         if (!this.connected) return;
 
         var toMe = (data.to == this.dbComm.userID) || (data.to == "all");
-        if (toMe) {
+        if (toMe && this.dbChildSyncComplete) {
             this.dbComm.sendPong();
         }
     }
