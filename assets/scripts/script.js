@@ -165,10 +165,10 @@ function OAuthUtility() {
 
 /** Implements Client<->database and server<->database communication 
  *  @constructor */
-function DbCommunicator(autoAuth, autoconnect) {
+function DbCommunicator(autoAuth, autoconnect, roomName) {
     // inherits EventObject
     EventObject.call(this);
-
+    
     var self = this;
 
     { // instance properties
@@ -196,17 +196,18 @@ function DbCommunicator(autoAuth, autoconnect) {
         /** Raises the 'received' message when a chat message is received */
         this.chatMessages = new EventObject();
 
+        roomName = "room" + (roomName || "");
         this.nodes = {
             leaderboard: this.database.ref("leaderboard"),
-            activePlayers: this.database.ref("room/users-active"),
-            allPlayers: this.database.ref("room/users-present"),
-            chatMessages: this.database.ref("room/chat"),
+            activePlayers: this.database.ref(roomName +"/users-active"),
+            allPlayers: this.database.ref(roomName +"/users-present"),
+            chatMessages: this.database.ref(roomName +"/chat"),
             //currentRound: this.database.ref("currentRound"),
-            requests: this.database.ref("room/current-round/requests"),
-            events: this.database.ref("room/current-round/events"),
-            host: this.database.ref("room/host"),
-            ping: this.database.ref("room/ping"),
-            pong: this.database.ref("room/pong"),
+            requests: this.database.ref(roomName +"/current-round/requests"),
+            events: this.database.ref(roomName +"/current-round/events"),
+            host: this.database.ref(roomName +"/host"),
+            ping: this.database.ref(roomName +"/ping"),
+            pong: this.database.ref(roomName +"/pong"),
         };
 
         /** Most revent version of data sent from firebase */
@@ -915,7 +916,7 @@ function EventObject() {
 }
 
 {   // Public interface
-    var comm = new DbCommunicator(true, true);
+    var comm = new DbCommunicator(true, true, window.roomName || "");
 
     function getActivePlayers() {
         return comm.client.getActivePlayers();
