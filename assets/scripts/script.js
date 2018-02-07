@@ -116,7 +116,12 @@ var Dic = {
     /** Removes the specified property from the object */
     remove: function (obj, key) {
         return delete obj[key];
-    }
+    },
+
+    /** Returns a boolean indicating whether or not the specified object contains the specified key. */
+    containsKey: function(obj, key) {
+        return obj.hasOwnProperty(obj);
+    },
 }
 /** Performs OAuth operation 
  *  @constructor */
@@ -552,11 +557,20 @@ function TwoteHost(dbComm) {
 
 
     TwoteHost.prototype.checkIfAllGuessesIn = function() {
-        var activeUserCount = Dic.getKeys(this.dbComm.cached.activePlayers).length;
-        var guessedUserCount = Dic.getKeys(this.guesses).length;
-        var allGuessesIn = (activeUserCount == guessedUserCount);
+        // Get us a list of all users
+        var activeUsers = Dic.getKeys(this.dbComm.cached.activePlayers);
+        var guessedUsers = Dic.getKeys(this.guesses);
 
-        if(allGuessesIn){
+        // Remove those that have guessed
+        guessedUsers.forEach(function(user){
+            var index = activeUsers.indexOf(user);
+            if(index >= 0) activeUsers.splice(index, 1);
+        });
+
+        // Anyone left over hasn't guessed yet.
+        var allDone = activeUsers.length == 0;
+
+        if(allDone) {
             this.handleAllGuessesMade();
         }
     }
