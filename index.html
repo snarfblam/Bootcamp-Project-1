@@ -10,86 +10,89 @@
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
 	<link rel="stylesheet" type="text/css" href="assets/css/style.css">
 </head>
-<body>
-
-<div class = "container">
-
-
-	<header>
-		<h1 class="grey lighten-1 center-align">Who Twote It? </h1> </header>
-		<div class = "row">
-			 <div class="col s12 m8 l3">
-			<img src ="assets/images/sillhouette.gif" >
-			</div>
-			 <div class="col s12 m4 l3">
-			<div id= twitterQuote>QUOTE</div>
-			<br>
-			<div id = "multipleChoiceAnswers">
-				<span id="answer0"><img src="" id="profilepic0"><p id="answer-name-0">display name 1</p><p id="answer-handle-0">username 1</p></span>
-				<span id="answer1"><img src="" id="profilepic1"><p id="answer-name-1">display name 2</p><p id="answer-handle-1">username 2</p></span>
-				<span id="answer2"><img src="" id="profilepic2"><p id="answer-name-2">display name 3</p><p id="answer-handle-2">username 3</p></span>
-				<span id="answer3"><img src="" id="profilepic3"><p id="answer-name-3">display name 4</p><p id="answer-handle-3">username 4</p></span>
-			</div>
-			</div>
+<body class="grey lighten-2">
+	<nav>
+		<div class="nav-wrapper">
+			<h1 class="center brand-logo">Who Twote It? </h1> 
 		</div>
-
-			<div id = "currentScoreBoard"></div>
-			<ul class="collection">
-			<div class="row">
-				<div class="col s6">
-				<li class="collection-item avatar">
-					<i class="material-icons circle blue"></i>
-					<span class="player1">Player 1</span>
-					<p id="score1">Score<br>
-					</p>   
-				</li>
+	</nav>
+	<div class = "container">
+		<div class="row">
+			<div class="col s9 white z-depth-2">
+				<div class = "row valign-wrapper">
+					 <div class="col s3">
+						<img src ="assets/images/sillhouette.gif" >
+					</div>
+					<div class="col s9 blue lighten-3">
+						<div id= twitterQuote>QUOTE</div>
+					</div>
 				</div>
-				<div class="col s6">
-				<li class="collection-item avatar">
-					<i class="material-icons circle"></i>
-					<span class="player2">Player 2</span>
-					<p id="score2">Score <br>
-					</p>
-				</li>
+				<div class="row">
+					<div id = "multipleChoiceAnswers" class="col s12">
+						<span id="answer0" class="answer card horizontal">
+							<div class="card-image">
+								<img src="" id="profilepic0" class="profimg">
+							</div>
+							<div class="card-content">
+								<p id="answer-name-0">display name 1</p>
+								<p id="answer-handle-0">username 1</p>
+							</div>
+						</span>
+						<span id="answer1" class="answer card horizontal">
+							<div class="card-image">
+								<img src="" id="profilepic1" class="profimg card-image">
+							</div>
+							<div class="card-content">
+								<p id="answer-name-1">display name 2</p>
+								<p id="answer-handle-1">username 2</p>
+							</div>
+						</span>
+						<span id="answer2" class="answer card horizontal">
+							<div class="card-image">
+								<img src="" id="profilepic2" class="profimg card-image">
+							</div>
+							<div class="card-content">
+								<p id="answer-name-2">display name 3</p>
+								<p id="answer-handle-2">username 3</p>
+							</div>
+						</span>
+						<span id="answer3" class="answer card horizontal">
+							<div class="card-image">
+								<img src="" id="profilepic3" class="profimg card-image">
+							</div>
+							<div class="card-content">
+								<p id="answer-name-3">display name 4</p>
+								<p id="answer-handle-3">username 4</p>
+							</div>
+						</span>
+					</div>
+				</div>
 			</div>
+				<div class="col s3 light-blue lighten-5 z-depth-2">
+					<div>
+						<ul id="playerlist">
+							THIS IS A LIST OF PLAYERS
+						</ul>
+					</div>
+					<hr>
+					<div>
+						<ol id="leaderboard-alltime">
+							THIS IS THE LEADERBOARD FOR ALL TIME
+						</ol>
+						<hr>
+						<ol id="leaderboard-daily">
+							THIS IS THE LEADERBOARD FOR TODAY
+						</ol>
+					</div>
+				</div>
 			</div>
-			<div class="row">
-				<div class="col s6">
-				<li class="collection-item avatar">
-					<i class="material-icons circle green"></i>
-					<span class="player3">Player 3</span>
-					<p id="score3">Score <br>
-					</p>
-				</li>
-			</div>
-			<div class="col s6">
-				<li class="collection-item avatar">
-					<i class="material-icons circle red"></i>
-					<span class="player4">Player 4</span>
-					<p id ="score4">Score <br>
-
-					</p>
-			</div>
-				</li>
-				</ul>
-		
-  		<footer class="page-footer grey lighten-1">
-          <div class="container">
-            <div class="row">
-              <div class="col l6 s12">
-                <h5 class="timer black-text">Timer:</h5>
-              </div>
-              <div class="col l4 offset-l2 s12">
-                  <a class="black-text" href="#!">Leaderboard</a>      
-              </div>
-            </div>
-		
 		</div>
-	</footer>
-  
+		<footer>
+			Thanks
+		</footer>
 		<script src="https://www.gstatic.com/firebasejs/4.9.0/firebase.js"></script>
 		<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-        crossorigin="anonymous"></script>
+	    crossorigin="anonymous"></script>
 		<script src="assets/scripts/moment.min.js"></script>
 		<script src="assets/scripts/script.js"></script>
 		<script src="assets/scripts/leaderboard.js"></script>

@@ -7,7 +7,10 @@ var config = {
 	storageBucket: "bcs-whosaidit.appspot.com",
 	messagingSenderId: "736508559692"
 };
-firebase.initializeApp(config);
+if (!firebase.apps.length) {
+    firebase.initializeApp(config);
+}
+
 var database = firebase.database();
 var dateStr = moment().startOf('day').format("YYMMDD");
 
@@ -77,12 +80,20 @@ function GrabDailyLeader(){
 		console.log("this is the snapshot for Daily",snapshot.val());
 
 		var userobj= snapshot.val()
+	console.log("this is the user Obj", userobj)
+	// getLeaderboard(userobj)
 		var allOurUsersArray=[ ]
 		for(var i in userobj){
-console.log(userobj[i])
-		};
-
-		function compare(a,b) {
+			console.log('This is the value', userobj[i]);
+			console.log('these are the keys of the obj',i);
+			var playerobj={}
+			playerobj.name= i;
+			playerobj.score= userobj[i].score;
+			allOurUsersArray.push(playerobj);
+		}; 
+console.log('all users array here', allOurUsersArray);
+ 		getLeaderboard(allOurUsersArray);
+		 /* function compare(a,b) {
 		  if (a.last_nom < b.last_nom)
 		    return -1;
 		  if (a.last_nom > b.last_nom)
@@ -90,11 +101,20 @@ console.log(userobj[i])
 		  return 0;
 		}
 
-		allOurUsersArray.sort(compare);
+		allOurUsersArray.sort(compare); */
 
 	});
 }
 GrabDailyLeader()
+
+function getLeaderboard(leaderboard){
+	var alltime = $("#leaderboard-alltime");
+	var today = $("#leaderboard-daily");
+	for (var i=0;i<10;i++){
+		alltime.append("<li>").text(leaderboard[i].name)
+		today.append("<li>").text(leaderboard[i].name)
+	}
+}
 
 
 
