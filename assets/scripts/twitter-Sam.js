@@ -73,7 +73,7 @@ getTweet(ops[Math.floor(Math.random()*4)],10).then(function(data){
 	user = getUserData(data[index]);
 	return user
 	}).then(function(user){
-		$("#twitterQuote").text(user.text)
+		$("#twitterQuote").html(user.text)
 	})
 function setter(user,i){
 	$("#profilepic"+i).attr("src",twitterResFix(user.avatar));
@@ -81,3 +81,18 @@ function setter(user,i){
 	$("#answer-handle-"+i).text("@"+user.username);
 }
 dispOptions(ops)
+
+function showPlayers(playersArray){
+	var playerlist = $("#playerlist")
+	for (var i=0;i<players.length;i++){
+		playerlist.append("<li>").text(playersArray[i].name)
+	}
+}
+function getLeaderboard(leaderboard){
+	var alltime = $("#leaderboard-alltime");
+	var today = $("$leaderboard-daily");
+	for (var i=0;i<10;i++){
+		alltime.append("<li>").text(leaderboard.alltime[i].name)
+		today.append("<li>").text(leaderboard.today[i].name)
+	}
+}

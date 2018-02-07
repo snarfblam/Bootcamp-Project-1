@@ -8,8 +8,6 @@
 
 #twitterQuote{
 	font-size: 24px;
-	background-color: #55aacc;
-
 }
 .answer{
 	display: inline-block;
@@ -17,4 +15,9 @@
 .profimg{
 	width:100px !important;
 	height:100px !important;
+}
+.brand-logo{
+	font-style: italic;
+	font-weight: 200;
+	font-size: 100px;
 }

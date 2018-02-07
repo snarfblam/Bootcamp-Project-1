@@ -13,17 +13,17 @@
 <body class="grey lighten-2">
 	<nav>
 		<div class="nav-wrapper">
-			<h1 class="grey lighten-1 center brand-logo">Who Twote It? </h1> 
+			<h1 class="center brand-logo">Who Twote It? </h1> 
 		</div>
 	</nav>
 	<div class = "container">
 		<div class="row">
-			<div class="col s9 white">
-				<div class = "row">
+			<div class="col s9 white z-depth-2">
+				<div class = "row valign-wrapper">
 					 <div class="col s3">
 						<img src ="assets/images/sillhouette.gif" >
 					</div>
-					<div class="col s9">
+					<div class="col s9 blue lighten-3">
 						<div id= twitterQuote>QUOTE</div>
 					</div>
 				</div>
@@ -68,12 +68,21 @@
 					</div>
 				</div>
 			</div>
-				<div class="col s3 light-blue lighten-5">
+				<div class="col s3 light-blue lighten-5 z-depth-2">
 					<div>
-						THIS IS A LIST OF PLAYERS
+						<ul id="playerlist">
+							THIS IS A LIST OF PLAYERS
+						</ul>
 					</div>
+					<hr>
 					<div>
-						THIS IS THE LEADERBOARD
+						<ol id="leaderboard-alltime">
+							THIS IS THE LEADERBOARD FOR ALL TIME
+						</ol>
+						<hr>
+						<ol id="leaderboard-daily">
+							THIS IS THE LEADERBOARD FOR TODAY
+						</ol>
 					</div>
 				</div>
 			</div>
