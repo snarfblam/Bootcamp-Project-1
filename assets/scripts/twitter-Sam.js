@@ -1,5 +1,8 @@
 var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13", "TheEllenShow", "Oprah", "KingJames", "TBrady14", "KyrieIrving", "Pontifex", "ElonMusk"]
 
+function twitterResFix(url){
+	return url.slice(0,-11)+url.slice(-4)
+}
 function initTwitter(){
 
 }
@@ -9,7 +12,7 @@ function getNextQuestion(){
 
 function getTweet(user){
 	var tweeter = new TwitterReader();
-    return tweeter.fetchTweets(user, 1)
+    return tweeter.fetchTweets(user, 10)
         .then(function (tweets) {
             return tweets
         }, function (error) {
@@ -41,43 +44,55 @@ function dispOptions(ops){
 		user = getUserData(data[0]);
 		return user
 	}).then(function(user){
-		$("#profilepic0").attr("src",user.avatar)
-		$("#answer-name-0").text(user.name)
-		$("#answer-handle-0").text(user.username)
+		setter(user,0)
 	})
 	getTweet(ops[1]).then(function(data){
 		user = getUserData(data[0]);
 		return user
 	}).then(function(user){
-		$("#profilepic1").attr("src",user.avatar)
-		$("#answer-name-1").text(user.name)
-		$("#answer-handle-1").text(user.username)
+		setter(user,1)
 	})
 	getTweet(ops[2]).then(function(data){
 		user = getUserData(data[0]);
 		return user
 	}).then(function(user){
-		$("#profilepic2").attr("src",user.avatar)
-		$("#answer-name-2").text(user.name)
-		$("#answer-handle-2").text(user.username)
+		setter(user,2)
 	})
 	getTweet(ops[3]).then(function(data){
 		user = getUserData(data[0]);
 		return user
 	}).then(function(user){
-		$("#profilepic3").attr("src",user.avatar)
-		$("#answer-name-3").text(user.name)
-		$("#answer-handle-3").text(user.username)
+		setter(user,3)
 	})
 }
 var ops = getOptions()
 var index = Math.floor(Math.random()*10);
 console.log(index);
 getTweet(ops[Math.floor(Math.random()*4)],10).then(function(data){
-	console.log(data)
+	console.log(data[index])
 	user = getUserData(data[index]);
 	return user
 	}).then(function(user){
-		$("#twitterQuote").text(user.text)
+		$("#twitterQuote").html(user.text)
 	})
+function setter(user,i){
+	$("#profilepic"+i).attr("src",twitterResFix(user.avatar));
+	$("#answer-name-"+i).text(user.name);
+	$("#answer-handle-"+i).text("@"+user.username);
+}
 dispOptions(ops)
+
+function showPlayers(playersArray){
+	var playerlist = $("#playerlist")
+	for (var i=0;i<players.length;i++){
+		playerlist.append("<li>").text(playersArray[i].name)
+	}
+}
+function getLeaderboard(leaderboard){
+	var alltime = $("#leaderboard-alltime");
+	var today = $("$leaderboard-daily");
+	for (var i=0;i<10;i++){
+		alltime.append("<li>").text(leaderboard.alltime[i].name)
+		today.append("<li>").text(leaderboard.today[i].name)
+	}
+}

@@ -59,45 +59,83 @@ function leaderboardHistoryPull(date){
 leaderboardPull();
 leaderboardHistoryPull("180131")
 
-min = minimun scorer in the leaderboard 
-	if (player1 > min){
-		remove min from leadedboard add min to leaderboard
-	}
-	min = minimun scorer in the leaderboard 
-	if (player2 > min){
-		remove min from leadedboard add min to leader board
-	}
-	min = minimun scorer in the leaderboard 
-	if (player3 > min){
-		remove min from leadedboard add min to leader board
-	}
-	min = minimun scorer in the leaderboard 
-	if (player4 > min){
-		remove min from leadedboard add min to leader board
-	}
-	min = minimun scorer in the leaderboard 
-	if (player5 > min){
-		remove min from mleadedboard add min to leader board
-	}
-	min = minimun scorer in the leaderboard 
-	if (player6 > min){
-		remove min from leadedboard add min to leader board
-	}
-	min = minimun scorer in the leaderboard 
-	if (player7 > min){
-		remove min from leadedboard add min to leader board
-	}
-	min = minimun scorer in the leaderboard 
-	if (player8 > min){
-		remove min from leadedboard add min to leader board
-	}
-	min = minimun scorer in the leaderboard 
-	if (player9 > min){
-		remove min from leadedboard add min to leader board
-	}
-	min = minimun scorer in the leaderboard 
-	if (player10 > min){
-		remove min from leadedboard add min to leader board
-	};
 
-	
+function GrabAllTimeLeader(){
+	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime').orderByChild("score").limitToLast(10);
+	console.log("Leader board update",leaderboardAllTime);
+	leaderboardAllTime.once('value').then(function(snapshot){
+		console.log("this is the snapshot fo All Time",snapshot.val())
+
+	});
+}
+GrabAllTimeLeader()
+
+function GrabDailyLeader(){
+	var leaderboardDaily = firebase.database().ref('leaderboard/180203').orderByChild("score").limitToLast(10);
+	console.log("Leader board update",leaderboardDaily);
+	leaderboardDaily.once('value').then(function(snapshot){
+		console.log("this is the snapshot for Daily",snapshot.val());
+
+		var userobj= snapshot.val()
+		var allOurUsersArray=[ ]
+		for(var i in userobj){
+console.log(userobj[i])
+		};
+
+		function compare(a,b) {
+		  if (a.last_nom < b.last_nom)
+		    return -1;
+		  if (a.last_nom > b.last_nom)
+		    return 1;
+		  return 0;
+		}
+
+		allOurUsersArray.sort(compare);
+
+	});
+}
+GrabDailyLeader()
+
+
+// min = minimun scorer in the leaderboard 
+// 	if (player1 > min){
+// 		remove min from leadedboard add min to leaderboard
+// 	}
+// 	min = minimun scorer in the leaderboard 
+// 	if (player2 > min){
+// 		remove min from leadedboard add min to leader board
+// 	}
+// 	min = minimun scorer in the leaderboard 
+// 	if (player3 > min){
+// 		remove min from leadedboard add min to leader board
+// 	}
+// 	min = minimun scorer in the leaderboard 
+// 	if (player4 > min){
+// 		remove min from leadedboard add min to leader board
+// 	}
+// 	min = minimun scorer in the leaderboard 
+// 	if (player5 > min){
+// 		remove min from mleadedboard add min to leader board
+// 	}
+// 	min = minimun scorer in the leaderboard 
+// 	if (player6 > min){
+// 		remove min from leadedboard add min to leader board
+// 	}
+// 	min = minimun scorer in the leaderboard 
+// 	if (player7 > min){
+// 		remove min from leadedboard add min to leader board
+// 	}
+// 	min = minimun scorer in the leaderboard 
+// 	if (player8 > min){
+// 		remove min from leadedboard add min to leader board
+// 	}
+// 	min = minimun scorer in the leaderboard 
+// 	if (player9 > min){
+// 		remove min from leadedboard add min to leader board
+// 	}
+// 	min = minimun scorer in the leaderboard 
+// 	if (player10 > min){
+// 		remove min from leadedboard add min to leader board
+// 	};
+
+// 	
