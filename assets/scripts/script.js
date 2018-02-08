@@ -299,6 +299,12 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
 
         this.nodes.host.once("value", function (snapshot) {
             var host = snapshot.val();
+
+            if(host = self.userID) {
+            // we pinged and rejoined... let someone take over
+            self.nodes.host.set("-");
+            }
+
             if (!host) {
                 self.host.joinRoom();
             }
@@ -927,6 +933,10 @@ function TwoteClient(dbComm) {
         this.currentOptions.push(args.option4 || "option 4 missing");
 
         this.ui_roundBegin();
+
+        if(!this.dbComm.cached.allPlayers[this.dbComm.userID]){
+            this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ displayName: this.dbComm.user });
+        }
     }
     TwoteClient.prototype.evt_guessMade = function (args) {
         var id = args.user || "unknown user";
