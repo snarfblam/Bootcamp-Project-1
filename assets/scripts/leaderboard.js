@@ -59,14 +59,20 @@ function leaderboardDatePull(date){
 	return leaderboardOut;
 }
 
-function leaderboardPush(userID,wins,losses){
+function leaderboardPush(userID,wins,losses, userName){
 	database.ref('leaderboard/alltime/'+userID).set({
 		wins:wins,
-		losses:losses
+		losses:losses,
+		userName: displayName || userID, // use userID if display name omitted
 	})
+
+	console.log(userID+": "+score)
+}
+function leaderboardPushToday(userID,wins,losses, userName){
 	database.ref('leaderboard/'+dateStr+"/"+userID).set({
 		wins:wins,
-		losses:losses
+		losses:losses,
+		userName: displayName || userID, // use userID if display name omitted
 	})
 	console.log(userID+": "+score)
 }
@@ -91,13 +97,20 @@ function dispLeaderboardToday(leaderboardO){
 
 function getUser(userID){
 	var alltimeStats
-	database.ref("leaderboard/alltime/"+userID).once("value").then(function(snapshot){
+	return database.ref("leaderboard/alltime/"+userID).once("value").then(function(snapshot){
 		var userAllTime = snapshot.val();
 		userAllTime.userID = userID;
 		return userAllTime;
+		console.log(userAllTime);
 	})
-	console.log(userAllTime);
-	return userAllTime
+}
+function getUserToday(userID){
+	return database.ref("leaderboard/" + dateStr + "/"+userID).once("value").then(function(snapshot){
+		var userAllTime = snapshot.val();
+		userAllTime.userID = userID;
+		return userAllTime;
+		console.log(userAllTime);
+	})
 }
 leaderboardPull().then(function(leaderboard){
 	console.log(leaderboard)
