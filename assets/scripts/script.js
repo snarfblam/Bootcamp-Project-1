@@ -119,7 +119,7 @@ var Dic = {
     },
 
     /** Returns a boolean indicating whether or not the specified object contains the specified key. */
-    containsKey: function(obj, key) {
+    containsKey: function (obj, key) {
         return obj.hasOwnProperty(obj);
     },
 }
@@ -168,7 +168,7 @@ function OAuthUtility() {
 function DbCommunicator(autoAuth, autoconnect, roomName) {
     // inherits EventObject
     EventObject.call(this);
-    
+
     var self = this;
 
     { // instance properties
@@ -199,15 +199,15 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
         roomName = "room" + (roomName || "");
         this.nodes = {
             leaderboard: this.database.ref("leaderboard"),
-            activePlayers: this.database.ref(roomName +"/users-active"),
-            allPlayers: this.database.ref(roomName +"/users-present"),
-            chatMessages: this.database.ref(roomName +"/chat"),
+            activePlayers: this.database.ref(roomName + "/users-active"),
+            allPlayers: this.database.ref(roomName + "/users-present"),
+            chatMessages: this.database.ref(roomName + "/chat"),
             //currentRound: this.database.ref("currentRound"),
-            requests: this.database.ref(roomName +"/current-round/requests"),
-            events: this.database.ref(roomName +"/current-round/events"),
-            host: this.database.ref(roomName +"/host"),
-            ping: this.database.ref(roomName +"/ping"),
-            pong: this.database.ref(roomName +"/pong"),
+            requests: this.database.ref(roomName + "/current-round/requests"),
+            events: this.database.ref(roomName + "/current-round/events"),
+            host: this.database.ref(roomName + "/host"),
+            ping: this.database.ref(roomName + "/ping"),
+            pong: this.database.ref(roomName + "/pong"),
         };
 
         /** Most revent version of data sent from firebase */
@@ -241,6 +241,8 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
     this.host = new TwoteHost(self);
     this.client = new TwoteClient(self);
 
+    window.addEventListener("unload", this.on_unload.bind(this));
+
     if (autoAuth) {
         var auth_promise = this.auth.authenticate();
 
@@ -254,7 +256,7 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
                     if (debugOptions.allowDebugUser && window.location.protocol == "file:") {
                         // local machine debugging
                         var randy = Math.floor(Math.random() * 1000);
-                        self.user = "testUser_" + randy; 
+                        self.user = "testUser_" + randy;
                         self.userID = "0xDEADBEEF_" + randy;
                     } else {
                         self.auth.signInWithRedirect();
@@ -311,9 +313,41 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
         this.sendPong();
 
         var self = this;
-        setTimeout(function() {
+        setTimeout(function () {
             self.host.joinRoom();
         }, 250);
+    }
+
+    DbCommunicator.prototype.on_unload = function () {
+        if (this.host.connected) {
+            // If we're hosting, we'll need to nominate a new host
+            var userList = Dic.getKeys(this.cached.activePlayers); // prefer an active player
+            if (userList.length == 1) userList = Dic.getKeys(this.cached.allPlayers);
+
+            if (userList.length == 1) {
+                // nobody else here... clean up and go home.
+                this.nodes.host.set("null");
+                this.nodes.ping.set("null");
+                this.nodes.pong.set("null");
+                this.nodes.requests.set("null");
+                this.nodes.events.set("null");
+            } else {
+                var newHost = userList[0]; // nominate whoever is at the top of the list for new host.
+                if (newHost == this.userID) newHost = userList[1]; // don't want to nominate self for new host... we're leaving
+
+                this.sendEvent(twoteMessages.userLeft, {
+                    user: this.userID,
+                    displayName: this.user,
+                    reason: "part",
+                    wasHost: true,
+                });
+            }
+        } else if (this.client.connected) {
+            this.sendRequest(twoteMessages.userLeft, {
+                user: this.userID,
+                displayName: this.user,
+            });
+        }
     }
 }
 { // DbCommunicator - Send and receive from firebase
@@ -350,14 +384,14 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
     DbCommunicator.prototype.on_requests_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
         var message = data.message;
-        var args = data.args;
+        var args = data.args || {};
         this.requests.raise(message, args);
     }
 
     DbCommunicator.prototype.on_events_childAdded = function (childSnapshot) {
         var data = childSnapshot.val();
         var message = data.message;
-        var args = data.args;
+        var args = data.args || {};
         this.events.raise(message, args);
     }
 
@@ -396,9 +430,6 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
 
     };
 }
-{ // DBCommunicator - Ping
-
-}
 
 var twoteMessages = {
     readyToBegin: "readyToBegin",
@@ -434,6 +465,7 @@ function TwoteHost(dbComm) {
     // These event handlers are not actually registered until .joinRoom is called
     this.requestHandlers = {
         guessMade: this.req_guessMade.bind(this),
+        userLeft: this.req_userLeft.bind(this),
     };
     this.eventHandlers = {
         takeover: this.evt_takeover.bind(this),
@@ -453,6 +485,11 @@ function TwoteHost(dbComm) {
 
     /** Connects to the game as the host */
     TwoteHost.prototype.joinRoom = function () {
+        if(this.connected) {
+            console.warn("Attempted to connect host when already connected.");
+            return;
+        }
+
         // Heeeere's Johnny!
         this.dbComm.nodes.host.set(this.dbComm.userID);
         // Re-initialize the room.
@@ -488,10 +525,10 @@ function TwoteHost(dbComm) {
     TwoteHost.prototype.initTwitter = function () {
         initTwitter();
     }
-    
+
     /** Returns a promise that resolves to {question, option1, option2, option3, option4, correctAnswer} */
-    TwoteHost.prototype.getNextQuestion = function() {
-        if(!window.getNextQuestion) {
+    TwoteHost.prototype.getNextQuestion = function () {
+        if (!window.getNextQuestion) {
             return Promise.resolve({
                 question: "placeholder tweet",
                 option1: "placeholder twit 1",
@@ -507,20 +544,29 @@ function TwoteHost(dbComm) {
 }
 { // Game logic
     TwoteHost.prototype.getReadyForRound = function (args) {
+        if(this.dbComm.cached.host != this.dbComm.userID){
+            console.warn("I seem to have lost my hosting privileges.");
+            //this.disconnect();
+            window.location.reload(true);
+        }
+
+
         // include all present players in the round
         this.dbComm.nodes.activePlayers.set(this.dbComm.cached.allPlayers);
+        this.dbComm.nodes.ping.set(null);
+        this.dbComm.nodes.pong.set(null);
 
         this.state = TwoteHost.states.waiting;
         this.pingAllUsers();
         this.dbComm.sendEvent(twoteMessages.readyToBegin);
     }
 
-    TwoteHost.prototype.beginRound = function() {
+    TwoteHost.prototype.beginRound = function () {
         this.state = TwoteHost.states.playing;
         this.guesses = {};
 
         var self = this;
-        this.getNextQuestion().then(function(result){
+        this.getNextQuestion().then(function (result) {
             self.currentTweet = result.question;
             self.currentOptions = [
                 result.option1,
@@ -534,7 +580,7 @@ function TwoteHost(dbComm) {
                 tweet: self.currentTweet,
                 option1: result.option1,
                 option2: result.option2,
-                option3: result.option3, 
+                option3: result.option3,
                 option4: result.option4,
             };
 
@@ -542,38 +588,57 @@ function TwoteHost(dbComm) {
         });
     }
 
-    TwoteHost.prototype.handleAllGuessesMade = function() {
+    TwoteHost.prototype.handleAllGuessesMade = function () {
         var self = this;
 
         this.state = TwoteHost.states.roundOver;
+
+        this.updateLeaderboard();
 
         this.dbComm.sendEvent(twoteMessages.roundOver, {
             correctAnswer: self.correctOption,
         });
 
-        setTimeout(function(){
+        setTimeout(function () {
             self.getReadyForRound();
         }, twoteConfig.timeBetweenQuestions * 1000);
     }
 
 
-    TwoteHost.prototype.checkIfAllGuessesIn = function() {
+    TwoteHost.prototype.checkIfAllGuessesIn = function () {
+        if (this.state != TwoteHost.states.playing) return;
+
         // Get us a list of all users
         var activeUsers = Dic.getKeys(this.dbComm.cached.activePlayers);
         var guessedUsers = Dic.getKeys(this.guesses);
 
         // Remove those that have guessed
-        guessedUsers.forEach(function(user){
+        guessedUsers.forEach(function (user) {
             var index = activeUsers.indexOf(user);
-            if(index >= 0) activeUsers.splice(index, 1);
+            if (index >= 0) activeUsers.splice(index, 1);
         });
 
         // Anyone left over hasn't guessed yet.
         var allDone = activeUsers.length == 0;
 
-        if(allDone) {
+        if (allDone) {
             this.handleAllGuessesMade();
         }
+    }
+
+    TwoteHost.prototype.updateLeaderboard = function() {
+        var self = this;
+
+        var players = Dic.getKeys(this.dbComm.cached.activePlayers);
+        players.forEach(function(player){
+            var guess = self.guesses[player];
+            if(guess){
+                var right = (guess == self.correctOption);
+
+                // Don't know what to do here /shrug
+            }
+        });
+
     }
 }
 { // Request/event handlers
@@ -598,6 +663,17 @@ function TwoteHost(dbComm) {
         this.disconnect();
     }
 
+    TwoteHost.prototype.req_userLeft = function(args) {
+        var user = args.user || "unknown";
+        this.dbComm.sendEvent(twoteMessages.userLeft, {
+            user: args.user,
+            displayName: args.displayName,
+            reason: "part",
+            wasHost: false,
+        });
+
+        this.kickUser(user, "part");
+    }
 }
 { // Pinging and user kicking
 
@@ -637,9 +713,9 @@ function TwoteHost(dbComm) {
 
             if (this.userPingTime >= limit) {
                 // Time's up...
-                pingList.forEach(function (pingedUser) {
-                    this.kickTimedOutUser(pingedUser);
-                });
+                this.pingList.forEach(function (pingedUser) {
+                    this.kickUser(pingedUser, "ping");
+                }, this);
 
                 // All users that haven't been kicked have ponged.
                 // Re-start ping process
@@ -648,7 +724,7 @@ function TwoteHost(dbComm) {
         }
     }
 
-    TwoteHost.prototype.kickTimedOutUserhandlePing = function (userID) {
+    TwoteHost.prototype.kickUser = function (userID, reason) {
         var user = this.dbComm.cached.allPlayers[userID] || {};
         var displayName = userID.displayName || "[display name not found]";
 
@@ -659,7 +735,7 @@ function TwoteHost(dbComm) {
         this.dbComm.sendEvent(twoteMessages.userLeft, {
             user: userID,
             displayName: displayName,
-            reason: "ping",
+            reason: reason,
             wasHost: false,
         });
 
@@ -671,6 +747,7 @@ function TwoteHost(dbComm) {
     }
     TwoteHost.prototype.handlePong = function (data) {
         if (!this.connected) return;
+        if (this.pingList.length == 0) return; // otherwise our own pre-emptive pongs will prevent us from ever sending pings
 
         var userID = data.from;
 
@@ -715,6 +792,8 @@ function TwoteHost(dbComm) {
 /** Implements client logic. All browsers utilize this calss.
  * @constructor */
 function TwoteClient(dbComm) {
+    var self = this;
+
     /** @type {DbCommunicator} */
     this.dbComm = dbComm;
     this.connected = false;
@@ -722,6 +801,14 @@ function TwoteClient(dbComm) {
     this.hostPingNext = twoteConfig.hostPingTimeout;
     this.currentTweet = "";
     this.currentOptions = ["", "", "", "",];
+
+    /** Set to true after all the initial child_added events from joining the game have finished. */ 
+    // To avoid pong spamming the server on join, mainly
+    this.dbChildSyncComplete = false;
+    this.dbComm.nodes.ping.once("value", function() {
+        self.dbChildSyncComplete = true;
+        self.dbComm.sendPong();
+    });
 }
 { // Public methods
 
@@ -736,7 +823,7 @@ function TwoteClient(dbComm) {
     }
 
     /** Gets the current tweet and potential tweeters */
-    TwoteClient.prototype.getCurrentQuestion =  function() {
+    TwoteClient.prototype.getCurrentQuestion = function () {
         return {
             question: this.currentTweet,
             option1: this.currentOptions[0] || "option 1 missing",
@@ -746,7 +833,7 @@ function TwoteClient(dbComm) {
         };
     }
 
-    TwoteClient.prototype.userGuessed = function(answer) {
+    TwoteClient.prototype.userGuessed = function (answer) {
         this.dbComm.sendRequest(twoteMessages.guessMade, {
             user: this.dbComm.userID,
             guess: answer,
@@ -757,6 +844,11 @@ function TwoteClient(dbComm) {
 }
 { // Pinging, join and part
     TwoteClient.prototype.joinRoom = function () {
+        if(this.connected) {
+            console.warn("Attempted to connect client when already connected.");
+            return;
+        }
+
         this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ displayName: this.dbComm.user });
         this.connected = true;
 
@@ -777,7 +869,7 @@ function TwoteClient(dbComm) {
         if (!this.connected) return;
 
         var toMe = (data.to == this.dbComm.userID) || (data.to == "all");
-        if (toMe) {
+        if (toMe && this.dbChildSyncComplete) { // dbChildSyncComplete == true when we're loading all the pings (and everything else) upon initially joining the room
             this.dbComm.sendPong();
         }
     }
@@ -818,7 +910,7 @@ function TwoteClient(dbComm) {
 }
 { // Message handlers
     TwoteClient.prototype.evt_userLeft = function (args) {
-        var id = args.userID || "unknown user";
+        var id = args.user|| "unknown user";
         var reason = args.reason || "unknown reason";
         this.ui_userKicked(id, reason);
     }
@@ -987,7 +1079,7 @@ var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13", "T
 function getTweeterData() {
     var reader = new TwitterReader();
     var user = tweeters[Math.floor(Math.random() * tweeters.length)]
-    reader.fetchTweets(user,1).then(function(response){
+    reader.fetchTweets(user, 1).then(function (response) {
         var result = response;
         console.log(response);
     })
