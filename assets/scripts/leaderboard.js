@@ -71,12 +71,21 @@ function leaderboardPush(userID,wins,losses){
 	console.log(userID+": "+score)
 }
 
-function getLeaderboard(leaderboard){
+function dispLeaderboardAlltime(leaderboardO){
 	var alltime = $("#leaderboard-alltime");
-	var today = $("#leaderboard-daily");
-	for (var i=leaderboard.length-1;i>=0;i--){
-		console.log(leaderboard[i])
-		alltime.append("<li>").text(leaderboard[i].userName+": "+leaderboard[i].wins)
+	var leaderboard = leaderboardO.reverse();
+	for (var i=0;i<leaderboard.length;i++){
+		console.log(i)
+		alltime.append($("<li>").text(leaderboard[i].userName+": "+leaderboard[i].wins))
+	}
+}
+
+function dispLeaderboardToday(leaderboardO){
+	var alltime = $("#leaderboard-daily");
+	var leaderboard = leaderboardO.reverse();
+	for (var i=0;i<leaderboard.length;i++){
+		console.log(i)
+		alltime.append($("<li>").text(leaderboard[i].userName+": "+leaderboard[i].wins))
 	}
 }
 
@@ -90,5 +99,11 @@ function getUser(userID){
 	console.log(userAllTime);
 	return userAllTime
 }
-leaderboard=leaderboardPull();
-getLeaderboard(leaderboard);
+leaderboardPull().then(function(leaderboard){
+	console.log(leaderboard)
+	dispLeaderboardAlltime(leaderboard)
+});
+leaderboardDatePull(dateStr).then(function(leaderboard){
+	console.log(leaderboard)
+	dispLeaderboardToday(leaderboard)
+});

@@ -126,11 +126,3 @@ function showPlayers(playersArray){
 		playerlist.append("<li>").text(playersArray[i].name)
 	}
 }
-function getLeaderboard(leaderboard){      //dragged info for 91-98 to leaderboard.js
-	var alltime = $("#leaderboard-alltime");
-	var today = $("#leaderboard-daily");
-	for (var i=0;i<10;i++){
-		alltime.append("<li>").text(leaderboard.alltime[i].name)
-		today.append("<li>").text(leaderboard.today[i].name)
-	}
-}
