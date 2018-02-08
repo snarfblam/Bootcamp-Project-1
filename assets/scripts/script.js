@@ -217,8 +217,10 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
             host: null,
         };
 
-        /** Firebase user uid */
+        /** user id -- this is not an account id. this is a session ID, and if the same user logs on from two different browsers, he'll receive two different IDs */
         this.userID = null;
+        /** Firebase user UID. This identifies a specific user account. Multiple players can have the same userAccountID if they are logged into the same google account. */
+        this.userAccountID = null;
         /** OAuth user data */
         this.user = null;
         this.auth = new OAuthUtility();
@@ -250,7 +252,8 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
             .then(function (result) {
                 if (self.auth.user) { //authenticated?
                     self.user = self.auth.user.displayName;
-                    self.userID = self.auth.user.uid;
+                    self.userID = self.auth.user.uid; // this probably needn't be set here...
+                    self.userAccountID = self.auth.user.uid;
                 } else {
                     //throw Error("Not authenticated.");
                     if (debugOptions.allowDebugUser && window.location.protocol == "file:") {
@@ -258,6 +261,7 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
                         var randy = Math.floor(Math.random() * 1000);
                         self.user = "testUser_" + randy;
                         self.userID = "0xDEADBEEF_" + randy;
+                        self.userAccountID = "0xDEADBEEF_" + randy;
                     } else {
                         self.auth.signInWithRedirect();
                         autoconnect = false;
@@ -270,6 +274,7 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
                     // local machine debugging
                     self.user = "testUser";
                     self.userID = "0xDEADBEEF";
+                    self.userAccountID = "0xDEADBEEF";
                 } else {
                     self.auth.signInWithRedirect();
                     autoconnect = false;
@@ -295,7 +300,8 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
         var self = this;
         if (!this.userID) throw Error("Attempted to join room when not authenticated.");
 
-        this.client.joinRoom();
+        // The client is the one that joins and produces a session ID
+        this.userID = this.client.joinRoom();
 
         this.nodes.host.once("value", function (snapshot) {
             var host = snapshot.val();
@@ -855,13 +861,22 @@ function TwoteClient(dbComm) {
 
 }
 { // Pinging, join and part
+    /** Joins the room and returns the user's session ID */
     TwoteClient.prototype.joinRoom = function () {
         if (this.connected) {
             console.warn("Attempted to connect client when already connected.");
             return;
         }
 
-        this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ displayName: this.dbComm.user });
+        // this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ 
+        //     userAccountID: this.userAccountID,
+        //     displayName: this.dbComm.user 
+        // });
+        var result = this.dbComm.nodes.allPlayers.push({ 
+            userAccountID: this.userAccountID,
+            displayName: this.dbComm.user 
+        }).getKey();
+
         this.connected = true;
 
         this.pingInterval = setInterval(this.pingCheck.bind(this), 1000); // once a second
@@ -874,6 +889,8 @@ function TwoteClient(dbComm) {
             userLeft: this.evt_userLeft.bind(this),
             takeover: this.evt_takeover.bind(this),
         });
+
+        return result;
     }
 
     /** Responds to a ping if necessary */
