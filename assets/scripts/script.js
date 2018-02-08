@@ -546,7 +546,8 @@ function TwoteHost(dbComm) {
     TwoteHost.prototype.getReadyForRound = function (args) {
         if(this.dbComm.cached.host != this.dbComm.userID){
             console.warn("I seem to have lost my hosting privileges.");
-            this.disconnect();
+            //this.disconnect();
+            window.location.reload(true);
         }
 
 
@@ -592,6 +593,8 @@ function TwoteHost(dbComm) {
 
         this.state = TwoteHost.states.roundOver;
 
+        this.updateLeaderboard();
+
         this.dbComm.sendEvent(twoteMessages.roundOver, {
             correctAnswer: self.correctOption,
         });
@@ -621,6 +624,21 @@ function TwoteHost(dbComm) {
         if (allDone) {
             this.handleAllGuessesMade();
         }
+    }
+
+    TwoteHost.prototype.updateLeaderboard = function() {
+        var self = this;
+
+        var players = Dic.getKeys(this.dbComm.cached.activePlayers);
+        players.forEach(function(player){
+            var guess = self.guesses[player];
+            if(guess){
+                var right = (guess == self.correctOption);
+
+                // Don't know what to do here /shrug
+            }
+        });
+
     }
 }
 { // Request/event handlers
@@ -851,7 +869,7 @@ function TwoteClient(dbComm) {
         if (!this.connected) return;
 
         var toMe = (data.to == this.dbComm.userID) || (data.to == "all");
-        if (toMe && this.dbChildSyncComplete) {
+        if (toMe && this.dbChildSyncComplete) { // dbChildSyncComplete == true when we're loading all the pings (and everything else) upon initially joining the room
             this.dbComm.sendPong();
         }
     }

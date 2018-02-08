@@ -30,15 +30,16 @@
         crossorigin="anonymous"></script>
     <script src="https://www.gstatic.com/firebasejs/4.9.0/firebase.js"></script>
     <script src="assets/scripts/script.js"></script>
+    <script src="assets/scripts/twitter-Sam.js"></script>
 
     <script type="text/javascript">
         function roundBegin() {
             var q = getCurrentQuestion();
             $("#tweet").text(q.question);
-            $("#q1").text(q.option1);
-            $("#q2").text(q.option2);
-            $("#q3").text(q.option3);
-            $("#q4").text(q.option4);
+            $("#q1").text(q.option1.name);
+            $("#q2").text(q.option2.name);
+            $("#q3").text(q.option3.name);
+            $("#q4").text(q.option4.name);
 
             var pDiv = $("#players");
             pDiv.empty();
