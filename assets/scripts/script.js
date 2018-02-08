@@ -306,7 +306,7 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
         this.nodes.host.once("value", function (snapshot) {
             var host = snapshot.val();
 
-            if (host = self.userID) {
+            if (host == self.userID) {
                 // we pinged and rejoined... let someone take over
                 self.nodes.host.set("-");
             }
