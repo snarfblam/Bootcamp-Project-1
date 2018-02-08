@@ -300,9 +300,9 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
         this.nodes.host.once("value", function (snapshot) {
             var host = snapshot.val();
 
-            if(host = self.userID) {
-            // we pinged and rejoined... let someone take over
-            self.nodes.host.set("-");
+            if (host = self.userID) {
+                // we pinged and rejoined... let someone take over
+                self.nodes.host.set("-");
             }
 
             if (!host) {
@@ -358,12 +358,18 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
 }
 { // DbCommunicator - Send and receive from firebase
     DbCommunicator.prototype.sendRequest = function (message, args) {
+        args = args || {};
+        args.source = this.userID;
+
         var request = { message: message };
         if (args) request.args = args;
         this.nodes.requests.push(request);
     }
 
     DbCommunicator.prototype.sendEvent = function (message, args) {
+        args = args || {};
+        args.source = this.userID;
+
         var event = { message: message };
         if (args) event.args = args;
         this.nodes.events.push(event);
@@ -491,7 +497,7 @@ function TwoteHost(dbComm) {
 
     /** Connects to the game as the host */
     TwoteHost.prototype.joinRoom = function () {
-        if(this.connected) {
+        if (this.connected) {
             console.warn("Attempted to connect host when already connected.");
             return;
         }
@@ -550,7 +556,7 @@ function TwoteHost(dbComm) {
 }
 { // Game logic
     TwoteHost.prototype.getReadyForRound = function (args) {
-        if(this.dbComm.cached.host != this.dbComm.userID){
+        if (this.dbComm.cached.host != this.dbComm.userID) {
             console.warn("I seem to have lost my hosting privileges.");
             //this.disconnect();
             window.location.reload(true);
@@ -632,13 +638,13 @@ function TwoteHost(dbComm) {
         }
     }
 
-    TwoteHost.prototype.updateLeaderboard = function() {
+    TwoteHost.prototype.updateLeaderboard = function () {
         var self = this;
 
         var players = Dic.getKeys(this.dbComm.cached.activePlayers);
-        players.forEach(function(player){
+        players.forEach(function (player) {
             var guess = self.guesses[player];
-            if(guess){
+            if (guess) {
                 var right = (guess == self.correctOption);
 
                 // Don't know what to do here /shrug
@@ -669,7 +675,7 @@ function TwoteHost(dbComm) {
         this.disconnect();
     }
 
-    TwoteHost.prototype.req_userLeft = function(args) {
+    TwoteHost.prototype.req_userLeft = function (args) {
         var user = args.user || "unknown";
         this.dbComm.sendEvent(twoteMessages.userLeft, {
             user: args.user,
@@ -808,10 +814,10 @@ function TwoteClient(dbComm) {
     this.currentTweet = "";
     this.currentOptions = ["", "", "", "",];
 
-    /** Set to true after all the initial child_added events from joining the game have finished. */ 
+    /** Set to true after all the initial child_added events from joining the game have finished. */
     // To avoid pong spamming the server on join, mainly
     this.dbChildSyncComplete = false;
-    this.dbComm.nodes.ping.once("value", function() {
+    this.dbComm.nodes.ping.once("value", function () {
         self.dbChildSyncComplete = true;
         self.dbComm.sendPong();
     });
@@ -850,7 +856,7 @@ function TwoteClient(dbComm) {
 }
 { // Pinging, join and part
     TwoteClient.prototype.joinRoom = function () {
-        if(this.connected) {
+        if (this.connected) {
             console.warn("Attempted to connect client when already connected.");
             return;
         }
@@ -916,7 +922,7 @@ function TwoteClient(dbComm) {
 }
 { // Message handlers
     TwoteClient.prototype.evt_userLeft = function (args) {
-        var id = args.user|| "unknown user";
+        var id = args.user || "unknown user";
         var reason = args.reason || "unknown reason";
         this.ui_userKicked(id, reason);
     }
@@ -934,7 +940,7 @@ function TwoteClient(dbComm) {
 
         this.ui_roundBegin();
 
-        if(!this.dbComm.cached.allPlayers[this.dbComm.userID]){
+        if (!this.dbComm.cached.allPlayers[this.dbComm.userID]) {
             this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ displayName: this.dbComm.user });
         }
     }
