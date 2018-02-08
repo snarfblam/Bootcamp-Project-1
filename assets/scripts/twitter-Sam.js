@@ -6,8 +6,46 @@ function twitterResFix(url){
 function initTwitter(){
 
 }
-function getNextQuestion(){
 
+
+/** Returns a promise that resolves to {question, option1, option2, option3, option4, correctAnswer} 
+ *  where each option is {name, username, avatar, text} */
+function getNextQuestion(){
+	var options = getOptions();
+	var tweetPromises = [];
+	var tweetResults = [];
+
+	// For each option, get and store a promise that will update tweetResults
+	for(var i = 0; i < options.length; i++){
+		getTweetPromise(i);
+	}
+
+	// Once all the promises complete, we can return our question object
+	return Promise.all(tweetPromises).then(function(){
+		var correctUser = Math.floor(Math.random() * options.length);
+		var tweetIndex = Math.floor(Math.random() * tweetResults[correctUser].length);
+
+		return {
+			question: tweetResults[correctUser][tweetIndex].text,
+			option1: getUserData(tweetResults[0][0]), // get user data from first tweet of 0th user
+			option2: getUserData(tweetResults[1][0]), // get user data from first tweet of 1st user
+			option3: getUserData(tweetResults[2][0]), // get user data from first tweet of 2nd user
+			option4: getUserData(tweetResults[3][0]), // get user data from first tweet of 3rd user
+			correctAnswer: correctUser + 1, // correctUser = 0..3, correctAnswer = 1..4
+		};
+	});
+
+	function getTweetPromise(index) {
+		// Get our promise
+		var promise = getTweet(options[index]);
+		// Save it for later
+		tweetPromises[index] = promise;
+
+		// When it resolves, update our results array
+		promise.then(function(tweets){
+			tweetResults[index] = tweets;
+		});
+	}
 }
 
 function getTweet(user){
