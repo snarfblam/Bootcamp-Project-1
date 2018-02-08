@@ -249,7 +249,7 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
         this.authPromise = auth_promise
             .then(function (result) {
                 if (self.auth.user) { //authenticated?
-                    self.user = self.auth.user;
+                    self.user = self.auth.user.displayName;
                     self.userID = self.auth.user.uid;
                 } else {
                     //throw Error("Not authenticated.");
