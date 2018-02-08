@@ -873,7 +873,7 @@ function TwoteClient(dbComm) {
         //     displayName: this.dbComm.user 
         // });
         var result = this.dbComm.nodes.allPlayers.push({ 
-            userAccountID: this.userAccountID,
+            userAccountID: this.dbComm.userAccountID,
             displayName: this.dbComm.user 
         }).getKey();
 
