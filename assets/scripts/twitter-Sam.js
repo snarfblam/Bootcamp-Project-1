@@ -73,7 +73,7 @@ getTweet(ops[Math.floor(Math.random()*4)],10).then(function(data){
 	user = getUserData(data[index]);
 	return user
 	}).then(function(user){
-		$("#twitterQuote").html(user.text)
+		$("#twitterQuote").html('"'+user.text+'"')
 	})
 function setter(user,i){
 	$("#profilepic"+i).attr("src",twitterResFix(user.avatar));

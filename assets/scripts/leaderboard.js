@@ -17,147 +17,78 @@ var dateStr = moment().startOf('day').format("YYMMDD");
 //leaderboard functions
 
 function leaderboardPull(){
-	console.log(dateStr)
-	//grab sorted leaderboard from firebas3
-	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime').orderByChild("score").limitToLast(10);
-	leaderboardAllTime.once('value').then(function(snapshot){
-	//step thru snapshot -- will need to store in an array
-	snapshot.forEach(function(child){
-		//the key here is presently a UID, will need it to be a username in the future
-		console.log(child.key+": "+child.val()["wins"])
+	//grab sorted leaderboard from firebase
+	var leaderboard = firebase.database().ref('leaderboard/alltime').orderByChild("wins").limitToLast(10);
+	var leaderboardOut = leaderboard.once('value').then(function(snapshot){
+		var i=0;
+		var output=[];
+		//step thru snapshot -- will need to store in an array
+		snapshot.forEach(function(child){
+			output[i] = {
+				userID:child.key,
+				userName:child.val()["username"],
+				wins:child.val()["wins"],
+				losses:child.val()["losses"]
+			};
+			i++;
 		})
+		return output;
 	})
-	var leaderboardToday = firebase.database().ref('leaderboard/'+dateStr).orderByChild("score").limitToLast(10);
-	console.log("Today's Leaders:")
-	leaderboardToday.once('value').then(function(snapshot){
-	snapshot.forEach(function(child){
-		console.log(child.key+": "+child.val()["score"])
-		})
-	})
+	console.log(leaderboardOut)
+	return leaderboardOut;
 }
-function leaderboardPush(user,wins,losses){
-	database.ref('leaderboard/alltime/'+user).set({
+function leaderboardDatePull(date){
+	//grab sorted leaderboard from firebase
+	var leaderboard = firebase.database().ref('leaderboard/'+date).orderByChild("wins").limitToLast(10);
+	var leaderboardOut = leaderboard.once('value').then(function(snapshot){
+		var i=0;
+		var output=[];
+		//step thru snapshot -- will need to store in an array
+		snapshot.forEach(function(child){
+			output[i] = {
+				userID:child.key,
+				userName:child.val()["username"],
+				wins:child.val()["wins"],
+				losses:child.val()["losses"]
+			};
+			i++;
+		})
+		return output;
+	})
+	console.log(leaderboardOut)
+	return leaderboardOut;
+}
+
+function leaderboardPush(userID,wins,losses){
+	database.ref('leaderboard/alltime/'+userID).set({
 		wins:wins,
 		losses:losses
 	})
-	database.ref('leaderboard/'+dateStr+"/"+user).set({
+	database.ref('leaderboard/'+dateStr+"/"+userID).set({
 		wins:wins,
 		losses:losses
 	})
-	console.log(user+": "+score)
+	console.log(userID+": "+score)
 }
-function leaderboardHistoryPull(date){
-	var leaderboardToday = firebase.database().ref('leaderboard/'+date).orderByChild("score").limitToLast(10);
-	console.log("Leaders for "+date+":")
-	leaderboardToday.once('value').then(function(snapshot){
-		if (snapshot.length>0){
-			snapshot.forEach(function(child){
-			console.log(child.key+": "+child.val()["score"])
-		})}
-		else {
-			console.log("No data for "+date)
-		}
-	})
-}
-leaderboardPull();
-leaderboardHistoryPull("180131")
-
-
-function GrabAllTimeLeader(){
-	var leaderboardAllTime = firebase.database().ref('leaderboard/alltime').orderByChild("score").limitToLast(10);
-	console.log("Leader board update",leaderboardAllTime);
-	leaderboardAllTime.once('value').then(function(snapshot){
-		console.log("this is the snapshot fo All Time",snapshot.val())
-
-	});
-}
-GrabAllTimeLeader()
-
-function GrabDailyLeader(){
-	var leaderboardDaily = firebase.database().ref('leaderboard/180203').orderByChild("score").limitToLast(10);
-	console.log("Leader board update",leaderboardDaily);
-	leaderboardDaily.once('value').then(function(snapshot){
-		console.log("this is the snapshot for Daily",snapshot.val());
-
-		var userobj= snapshot.val()
-	console.log("this is the user Obj", userobj)
-	// getLeaderboard(userobj)
-		var allOurUsersArray=[ ]
-		for(var i in userobj){
-			console.log('This is the value', userobj[i]);
-			console.log('these are the keys of the obj',i);
-			var playerobj={}
-			playerobj.name= i;
-			playerobj.score= userobj[i].score;
-			allOurUsersArray.push(playerobj);
-		}; 
-console.log('all users array here', allOurUsersArray);
- 		getLeaderboard(allOurUsersArray);
-		 /* function compare(a,b) {
-		  if (a.last_nom < b.last_nom)
-		    return -1;
-		  if (a.last_nom > b.last_nom)
-		    return 1;
-		  return 0;
-		}
-
-		allOurUsersArray.sort(compare); */
-
-	});
-}
-GrabDailyLeader()
 
 function getLeaderboard(leaderboard){
 	var alltime = $("#leaderboard-alltime");
 	var today = $("#leaderboard-daily");
-	for (var i=0;i<10;i++){
-		alltime.append("<li>").text(leaderboard[i].name)
-		today.append("<li>").text(leaderboard[i].name)
+	for (var i=leaderboard.length-1;i>=0;i--){
+		console.log(leaderboard[i])
+		alltime.append("<li>").text(leaderboard[i].userName+": "+leaderboard[i].wins)
 	}
 }
 
-
-
-
-// min = minimun scorer in the leaderboard 
-// 	if (player1 > min){
-// 		remove min from leadedboard add min to leaderboard
-// 	}
-// 	min = minimun scorer in the leaderboard 
-// 	if (player2 > min){
-// 		remove min from leadedboard add min to leader board
-// 	}
-// 	min = minimun scorer in the leaderboard 
-// 	if (player3 > min){
-// 		remove min from leadedboard add min to leader board
-// 	}
-// 	min = minimun scorer in the leaderboard 
-// 	if (player4 > min){
-// 		remove min from leadedboard add min to leader board
-// 	}
-// 	min = minimun scorer in the leaderboard 
-// 	if (player5 > min){
-// 		remove min from mleadedboard add min to leader board
-// 	}
-// 	min = minimun scorer in the leaderboard 
-// 	if (player6 > min){
-// 		remove min from leadedboard add min to leader board
-// 	}
-// 	min = minimun scorer in the leaderboard 
-// 	if (player7 > min){
-// 		remove min from leadedboard add min to leader board
-// 	}
-// 	min = minimun scorer in the leaderboard 
-// 	if (player8 > min){
-// 		remove min from leadedboard add min to leader board
-// 	}
-// 	min = minimun scorer in the leaderboard 
-// 	if (player9 > min){
-// 		remove min from leadedboard add min to leader board
-// 	}
-// 	min = minimun scorer in the leaderboard 
-// 	if (player10 > min){
-// 		remove min from leadedboard add min to leader board
-// 	};
-
-// 	
+function getUser(userID){
+	var alltimeStats
+	database.ref("leaderboard/alltime/"+userID).once("value").then(function(snapshot){
+		var userAllTime = snapshot.val();
+		userAllTime.userID = userID;
+		return userAllTime;
+	})
+	console.log(userAllTime);
+	return userAllTime
+}
+leaderboard=leaderboardPull();
+getLeaderboard(leaderboard);
