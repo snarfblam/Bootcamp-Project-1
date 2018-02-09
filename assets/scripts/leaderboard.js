@@ -99,17 +99,31 @@ function getUser(userID){
 	var alltimeStats
 	return database.ref("leaderboard/alltime/"+userID).once("value").then(function(snapshot){
 		var userAllTime = snapshot.val();
+		console.log(userAllTime);
+
+		if(userAllTime == null) return {
+			wins: 0,
+			losses: 0,
+			username: "",
+			userID: userID,
+		};
 		userAllTime.userID = userID;
 		return userAllTime;
-		console.log(userAllTime);
 	})
 }
 function getUserToday(userID){
 	return database.ref("leaderboard/" + dateStr + "/"+userID).once("value").then(function(snapshot){
 		var userAllTime = snapshot.val();
+		console.log(userAllTime);
+
+		if(userAllTime == null) return {
+			wins: 0,
+			losses: 0,
+			username: "",
+			userID: userID,
+		};
 		userAllTime.userID = userID;
 		return userAllTime;
-		console.log(userAllTime);
 	})
 }
 leaderboardPull().then(function(leaderboard){

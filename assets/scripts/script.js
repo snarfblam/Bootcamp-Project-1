@@ -666,39 +666,49 @@ function TwoteHost(dbComm) {
         //     if (guess) {
         //         var isRight = (guess == self.correctOption);
         //         var userID = self.dbComm.cached.activePlayers[player]
-                
+
         //     }
         // });
 
-        Dic.forEach(this.dbComm.cached.activePlayers, function(key, player) {
+        Dic.forEach(this.dbComm.cached.activePlayers, function (key, player) {
             var guess = self.guesses[key];
-            if(guess) {
+            if (guess) {
                 var isRight = (guess == self.correctOption);
                 var userID = player.userAccountID;
 
-                getUser(userID).then(function(leaderboardObject){
-                    if(isRight) {
+                getUser(userID).then(function (leaderboardObject) {
+                    // If entry doesn't exist yet, we need to initialize .username
+                    if (!leaderboardObject.username) {
+                        leaderboardObject.username = player.displayName;
+                    }
+
+                    if (isRight) {
                         leaderboardObject.wins++;
                     } else {
                         leaderboardObject.losses++;
                     }
 
-                    leaderboardPush(userID, 
-                        leaderboardObject.wins, 
-                        leaderboardObject.losses, 
+                    leaderboardPush(userID,
+                        leaderboardObject.wins,
+                        leaderboardObject.losses,
                         leaderboardObject.username);
                 });
 
-                getUserToday(userID).then(function(leaderboardObject){
-                    if(isRight) {
+                getUserToday(userID).then(function (leaderboardObject) {
+                    // If entry doesn't exist yet, we need to initialize .username
+                    if (!leaderboardObject.username) {
+                        leaderboardObject.username = player.displayName;
+                    }
+
+                    if (isRight) {
                         leaderboardObject.wins++;
                     } else {
                         leaderboardObject.losses++;
                     }
 
-                    leaderboardPushToday(userID, 
-                        leaderboardObject.wins, 
-                        leaderboardObject.losses, 
+                    leaderboardPushToday(userID,
+                        leaderboardObject.wins,
+                        leaderboardObject.losses,
                         leaderboardObject.username);
                 });
             }
@@ -919,9 +929,9 @@ function TwoteClient(dbComm) {
         //     userAccountID: this.userAccountID,
         //     displayName: this.dbComm.user 
         // });
-        var result = this.dbComm.nodes.allPlayers.push({ 
+        var result = this.dbComm.nodes.allPlayers.push({
             userAccountID: this.dbComm.userAccountID,
-            displayName: this.dbComm.user 
+            displayName: this.dbComm.user
         }).getKey();
 
         this.connected = true;
