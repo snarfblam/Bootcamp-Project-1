@@ -999,6 +999,23 @@ function TwoteClient(dbComm) {
         var id = args.user || "unknown user";
         var reason = args.reason || "unknown reason";
         this.ui_userKicked(id, reason);
+
+        // If this client has been kicked, refresh to properly re-join the room
+        if(id == this.dbComm.userID) {
+            var kickMessage = $("<div>");
+            kickMessage.text("You've been kicked. Reload the page to re-join the game.");
+            kickMessage.css({
+                position: "fixed", top: "25%", 
+                height: "50%", width: "50%", 
+                left: "25%", background: "red", 
+                color: "white", textAlign: "center", 
+                paddingTop: "2em", border: "1px black solid"});
+            $(document.body).append(kickMessage);
+            kickMessage.on("click", function() {
+                kickMessage.remove();
+            });
+            
+        }
     }
     TwoteClient.prototype.evt_readyToBegin = function (args) {
         // Do nothing? we haven't established a ui function to notify users
