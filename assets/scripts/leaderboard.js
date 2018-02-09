@@ -66,7 +66,7 @@ function leaderboardPush(userID,wins,losses, username){
 		username: username || userID, // use userID if display name omitted
 	})
 
-	console.log(userID+": "+score)
+	console.log(userID+": "+wins)
 }
 function leaderboardPushToday(userID,wins,losses, username){
 	database.ref('leaderboard/'+dateStr+"/"+userID).set({
@@ -74,7 +74,7 @@ function leaderboardPushToday(userID,wins,losses, username){
 		losses:losses,
 		username: username || userID, // use userID if display name omitted
 	})
-	console.log(userID+": "+score)
+	console.log(userID+": "+wins)
 }
 
 function dispLeaderboardAlltime(leaderboardO){
