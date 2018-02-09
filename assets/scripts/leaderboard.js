@@ -59,20 +59,20 @@ function leaderboardDatePull(date){
 	return leaderboardOut;
 }
 
-function leaderboardPush(userID,wins,losses, userName){
+function leaderboardPush(userID,wins,losses, username){
 	database.ref('leaderboard/alltime/'+userID).set({
 		wins:wins,
 		losses:losses,
-		userName: displayName || userID, // use userID if display name omitted
+		username: displayName || userID, // use userID if display name omitted
 	})
 
 	console.log(userID+": "+score)
 }
-function leaderboardPushToday(userID,wins,losses, userName){
+function leaderboardPushToday(userID,wins,losses, username){
 	database.ref('leaderboard/'+dateStr+"/"+userID).set({
 		wins:wins,
 		losses:losses,
-		userName: displayName || userID, // use userID if display name omitted
+		username: displayName || userID, // use userID if display name omitted
 	})
 	console.log(userID+": "+score)
 }
