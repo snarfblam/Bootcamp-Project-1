@@ -651,9 +651,43 @@ function TwoteHost(dbComm) {
         players.forEach(function (player) {
             var guess = self.guesses[player];
             if (guess) {
-                var right = (guess == self.correctOption);
+                var isRight = (guess == self.correctOption);
+                var userID = self.dbComm.cached.activePlayers[player]
+                
+            }
+        });
 
-                // Don't know what to do here /shrug
+        Dic.forEach(this.dbComm.cached.activePlayers, function(key, player) {
+            var guess = self.guesses[player];
+            if(guess) {
+                var isRight = (guess == self.correctOption);
+                var userID = player.userAccountID;
+
+                getUser(userID).then(function(leaderboardObject){
+                    if(isRight) {
+                        leaderboardObject.wins++;
+                    } else {
+                        leaderboardObject.losses++;
+                    }
+
+                    leaderboardPush(userID, 
+                        leaderboardObject.wins, 
+                        leaderboardObject.losses, 
+                        leaderboardObject.username);
+                });
+
+                getUserToday(userID).then(function(leaderboardObject){
+                    if(isRight) {
+                        leaderboardObject.wins++;
+                    } else {
+                        leaderboardObject.losses++;
+                    }
+
+                    leaderboardPushToday(userID, 
+                        leaderboardObject.wins, 
+                        leaderboardObject.losses, 
+                        leaderboardObject.username);
+                });
             }
         });
 
