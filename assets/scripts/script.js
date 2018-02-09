@@ -217,8 +217,10 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
             host: null,
         };
 
-        /** Firebase user uid */
+        /** user id -- this is not an account id. this is a session ID, and if the same user logs on from two different browsers, he'll receive two different IDs */
         this.userID = null;
+        /** Firebase user UID. This identifies a specific user account. Multiple players can have the same userAccountID if they are logged into the same google account. */
+        this.userAccountID = null;
         /** OAuth user data */
         this.user = null;
         this.auth = new OAuthUtility();
@@ -250,7 +252,8 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
             .then(function (result) {
                 if (self.auth.user) { //authenticated?
                     self.user = self.auth.user.displayName;
-                    self.userID = self.auth.user.uid;
+                    self.userID = self.auth.user.uid; // this probably needn't be set here...
+                    self.userAccountID = self.auth.user.uid;
                 } else {
                     //throw Error("Not authenticated.");
                     if (debugOptions.allowDebugUser && window.location.protocol == "file:") {
@@ -258,6 +261,7 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
                         var randy = Math.floor(Math.random() * 1000);
                         self.user = "testUser_" + randy;
                         self.userID = "0xDEADBEEF_" + randy;
+                        self.userAccountID = "0xDEADBEEF_" + randy;
                     } else {
                         self.auth.signInWithRedirect();
                         autoconnect = false;
@@ -270,6 +274,7 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
                     // local machine debugging
                     self.user = "testUser";
                     self.userID = "0xDEADBEEF";
+                    self.userAccountID = "0xDEADBEEF";
                 } else {
                     self.auth.signInWithRedirect();
                     autoconnect = false;
@@ -295,10 +300,17 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
         var self = this;
         if (!this.userID) throw Error("Attempted to join room when not authenticated.");
 
-        this.client.joinRoom();
+        // The client is the one that joins and produces a session ID
+        this.userID = this.client.joinRoom();
 
         this.nodes.host.once("value", function (snapshot) {
             var host = snapshot.val();
+
+            if (host == self.userID) {
+                // we pinged and rejoined... let someone take over
+                self.nodes.host.set("-");
+            }
+
             if (!host) {
                 self.host.joinRoom();
             }
@@ -309,7 +321,20 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
     DbCommunicator.prototype.usurpRoom = function () {
         // There should probably be something involving a transaction here to avoid a race condition
         // between multiple clients.
+        var oldHost = this.cached.host;
+        oldHostName = (this.cached.allPlayers[oldHost] || {}).displayName || "host";
+
+        // Declare self as new king
         this.nodes.host.set(this.userID);
+        // Remove old host from player list
+        this.nodes.allPlayers.child(oldHost).set(null);
+        this.nodes.activePlayers.child(oldHost).set(null);
+        this.sendEvent(twoteMessages.userLeft, {
+            user: oldHost,
+            displayName: oldHostName,
+            reason: "ping",
+            wasHost: false, // Even though he was the host, we don't say so because we don't want another client to try to become host
+        });
         this.sendPong();
 
         var self = this;
@@ -326,11 +351,11 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
 
             if (userList.length == 1) {
                 // nobody else here... clean up and go home.
-                this.nodes.host.set("null");
-                this.nodes.ping.set("null");
-                this.nodes.pong.set("null");
-                this.nodes.requests.set("null");
-                this.nodes.events.set("null");
+                this.nodes.host.set(null);
+                this.nodes.ping.set(null);
+                this.nodes.pong.set(null);
+                this.nodes.requests.set(null);
+                this.nodes.events.set(null);
             } else {
                 var newHost = userList[0]; // nominate whoever is at the top of the list for new host.
                 if (newHost == this.userID) newHost = userList[1]; // don't want to nominate self for new host... we're leaving
@@ -352,12 +377,18 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
 }
 { // DbCommunicator - Send and receive from firebase
     DbCommunicator.prototype.sendRequest = function (message, args) {
+        args = args || {};
+        args.source = this.userID;
+
         var request = { message: message };
         if (args) request.args = args;
         this.nodes.requests.push(request);
     }
 
     DbCommunicator.prototype.sendEvent = function (message, args) {
+        args = args || {};
+        args.source = this.userID;
+
         var event = { message: message };
         if (args) event.args = args;
         this.nodes.events.push(event);
@@ -485,7 +516,7 @@ function TwoteHost(dbComm) {
 
     /** Connects to the game as the host */
     TwoteHost.prototype.joinRoom = function () {
-        if(this.connected) {
+        if (this.connected) {
             console.warn("Attempted to connect host when already connected.");
             return;
         }
@@ -544,7 +575,7 @@ function TwoteHost(dbComm) {
 }
 { // Game logic
     TwoteHost.prototype.getReadyForRound = function (args) {
-        if(this.dbComm.cached.host != this.dbComm.userID){
+        if (this.dbComm.cached.host != this.dbComm.userID) {
             console.warn("I seem to have lost my hosting privileges.");
             //this.disconnect();
             window.location.reload(true);
@@ -626,16 +657,60 @@ function TwoteHost(dbComm) {
         }
     }
 
-    TwoteHost.prototype.updateLeaderboard = function() {
+    TwoteHost.prototype.updateLeaderboard = function () {
         var self = this;
 
-        var players = Dic.getKeys(this.dbComm.cached.activePlayers);
-        players.forEach(function(player){
-            var guess = self.guesses[player];
-            if(guess){
-                var right = (guess == self.correctOption);
+        // var players = Dic.getKeys(this.dbComm.cached.activePlayers);
+        // players.forEach(function (player) {
+        //     var guess = self.guesses[player];
+        //     if (guess) {
+        //         var isRight = (guess == self.correctOption);
+        //         var userID = self.dbComm.cached.activePlayers[player]
 
-                // Don't know what to do here /shrug
+        //     }
+        // });
+
+        Dic.forEach(this.dbComm.cached.activePlayers, function (key, player) {
+            var guess = self.guesses[key];
+            if (guess) {
+                var isRight = (guess == self.correctOption);
+                var userID = player.userAccountID;
+
+                getUser(userID).then(function (leaderboardObject) {
+                    // If entry doesn't exist yet, we need to initialize .username
+                    if (!leaderboardObject.username) {
+                        leaderboardObject.username = player.displayName;
+                    }
+
+                    if (isRight) {
+                        leaderboardObject.wins++;
+                    } else {
+                        leaderboardObject.losses++;
+                    }
+
+                    leaderboardPush(userID,
+                        leaderboardObject.wins,
+                        leaderboardObject.losses,
+                        leaderboardObject.username);
+                });
+
+                getUserToday(userID).then(function (leaderboardObject) {
+                    // If entry doesn't exist yet, we need to initialize .username
+                    if (!leaderboardObject.username) {
+                        leaderboardObject.username = player.displayName;
+                    }
+
+                    if (isRight) {
+                        leaderboardObject.wins++;
+                    } else {
+                        leaderboardObject.losses++;
+                    }
+
+                    leaderboardPushToday(userID,
+                        leaderboardObject.wins,
+                        leaderboardObject.losses,
+                        leaderboardObject.username);
+                });
             }
         });
 
@@ -663,7 +738,7 @@ function TwoteHost(dbComm) {
         this.disconnect();
     }
 
-    TwoteHost.prototype.req_userLeft = function(args) {
+    TwoteHost.prototype.req_userLeft = function (args) {
         var user = args.user || "unknown";
         this.dbComm.sendEvent(twoteMessages.userLeft, {
             user: args.user,
@@ -802,10 +877,10 @@ function TwoteClient(dbComm) {
     this.currentTweet = "";
     this.currentOptions = ["", "", "", "",];
 
-    /** Set to true after all the initial child_added events from joining the game have finished. */ 
+    /** Set to true after all the initial child_added events from joining the game have finished. */
     // To avoid pong spamming the server on join, mainly
     this.dbChildSyncComplete = false;
-    this.dbComm.nodes.ping.once("value", function() {
+    this.dbComm.nodes.ping.once("value", function () {
         self.dbChildSyncComplete = true;
         self.dbComm.sendPong();
     });
@@ -843,13 +918,22 @@ function TwoteClient(dbComm) {
 
 }
 { // Pinging, join and part
+    /** Joins the room and returns the user's session ID */
     TwoteClient.prototype.joinRoom = function () {
-        if(this.connected) {
+        if (this.connected) {
             console.warn("Attempted to connect client when already connected.");
             return;
         }
 
-        this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ displayName: this.dbComm.user });
+        // this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ 
+        //     userAccountID: this.userAccountID,
+        //     displayName: this.dbComm.user 
+        // });
+        var result = this.dbComm.nodes.allPlayers.push({
+            userAccountID: this.dbComm.userAccountID,
+            displayName: this.dbComm.user
+        }).getKey();
+
         this.connected = true;
 
         this.pingInterval = setInterval(this.pingCheck.bind(this), 1000); // once a second
@@ -862,6 +946,8 @@ function TwoteClient(dbComm) {
             userLeft: this.evt_userLeft.bind(this),
             takeover: this.evt_takeover.bind(this),
         });
+
+        return result;
     }
 
     /** Responds to a ping if necessary */
@@ -910,7 +996,7 @@ function TwoteClient(dbComm) {
 }
 { // Message handlers
     TwoteClient.prototype.evt_userLeft = function (args) {
-        var id = args.user|| "unknown user";
+        var id = args.user || "unknown user";
         var reason = args.reason || "unknown reason";
         this.ui_userKicked(id, reason);
     }
@@ -927,6 +1013,10 @@ function TwoteClient(dbComm) {
         this.currentOptions.push(args.option4 || "option 4 missing");
 
         this.ui_roundBegin();
+
+        if (!this.dbComm.cached.allPlayers[this.dbComm.userID]) {
+            this.dbComm.nodes.allPlayers.child(this.dbComm.userID).set({ displayName: this.dbComm.user });
+        }
     }
     TwoteClient.prototype.evt_guessMade = function (args) {
         var id = args.user || "unknown user";
