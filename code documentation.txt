@@ -55,6 +55,10 @@ Messages (requests/events) sent between host and clients via firebase:
         {   correctAnswer: number 1- 4
         }
     User events:
+        userLeft (request) - user parting
+        {   user: userID
+            displayName: display name
+        }
         userLeft (event) - host has removed a user (e.g. ping timeout)
         {   user: userID
             displayName: display name
