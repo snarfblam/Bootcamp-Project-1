@@ -321,7 +321,20 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
     DbCommunicator.prototype.usurpRoom = function () {
         // There should probably be something involving a transaction here to avoid a race condition
         // between multiple clients.
+        var oldHost = this.cached.host;
+        oldHostName = (this.cached.allPlayers[oldHost] || {}).displayName || "host";
+
+        // Declare self as new king
         this.nodes.host.set(this.userID);
+        // Remove old host from player list
+        this.nodes.allPlayers.ref(oldHost).set(null);
+        this.nodes.activePlayers.ref(oldHost).set(null);
+        this.sendEvent(twoteMessages.userLeft, {
+            user: oldHost,
+            displayName: oldHostName,
+            reason: "ping",
+            wasHost: false, // Even though he was the host, we don't say so because we don't want another client to try to become host
+        });
         this.sendPong();
 
         var self = this;
