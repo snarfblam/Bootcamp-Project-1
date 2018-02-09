@@ -647,18 +647,18 @@ function TwoteHost(dbComm) {
     TwoteHost.prototype.updateLeaderboard = function () {
         var self = this;
 
-        var players = Dic.getKeys(this.dbComm.cached.activePlayers);
-        players.forEach(function (player) {
-            var guess = self.guesses[player];
-            if (guess) {
-                var isRight = (guess == self.correctOption);
-                var userID = self.dbComm.cached.activePlayers[player]
+        // var players = Dic.getKeys(this.dbComm.cached.activePlayers);
+        // players.forEach(function (player) {
+        //     var guess = self.guesses[player];
+        //     if (guess) {
+        //         var isRight = (guess == self.correctOption);
+        //         var userID = self.dbComm.cached.activePlayers[player]
                 
-            }
-        });
+        //     }
+        // });
 
         Dic.forEach(this.dbComm.cached.activePlayers, function(key, player) {
-            var guess = self.guesses[player];
+            var guess = self.guesses[key];
             if(guess) {
                 var isRight = (guess == self.correctOption);
                 var userID = player.userAccountID;
