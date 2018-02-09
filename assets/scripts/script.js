@@ -351,11 +351,11 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
 
             if (userList.length == 1) {
                 // nobody else here... clean up and go home.
-                this.nodes.host.set("null");
-                this.nodes.ping.set("null");
-                this.nodes.pong.set("null");
-                this.nodes.requests.set("null");
-                this.nodes.events.set("null");
+                this.nodes.host.set(null);
+                this.nodes.ping.set(null);
+                this.nodes.pong.set(null);
+                this.nodes.requests.set(null);
+                this.nodes.events.set(null);
             } else {
                 var newHost = userList[0]; // nominate whoever is at the top of the list for new host.
                 if (newHost == this.userID) newHost = userList[1]; // don't want to nominate self for new host... we're leaving
