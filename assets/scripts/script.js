@@ -327,8 +327,8 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
         // Declare self as new king
         this.nodes.host.set(this.userID);
         // Remove old host from player list
-        this.nodes.allPlayers.ref(oldHost).set(null);
-        this.nodes.activePlayers.ref(oldHost).set(null);
+        this.nodes.allPlayers.child(oldHost).set(null);
+        this.nodes.activePlayers.child(oldHost).set(null);
         this.sendEvent(twoteMessages.userLeft, {
             user: oldHost,
             displayName: oldHostName,
