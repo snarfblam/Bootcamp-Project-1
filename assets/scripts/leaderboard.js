@@ -63,7 +63,7 @@ function leaderboardPush(userID,wins,losses, username){
 	database.ref('leaderboard/alltime/'+userID).set({
 		wins:wins,
 		losses:losses,
-		username: displayName || userID, // use userID if display name omitted
+		username: username || userID, // use userID if display name omitted
 	})
 
 	console.log(userID+": "+score)
@@ -72,7 +72,7 @@ function leaderboardPushToday(userID,wins,losses, username){
 	database.ref('leaderboard/'+dateStr+"/"+userID).set({
 		wins:wins,
 		losses:losses,
-		username: displayName || userID, // use userID if display name omitted
+		username: username || userID, // use userID if display name omitted
 	})
 	console.log(userID+": "+score)
 }
