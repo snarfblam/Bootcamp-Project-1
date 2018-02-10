@@ -27,7 +27,7 @@ var myGuess = 0;
                 pDiv.append(box);
             });
 
-            $(".answered, .answeredSelection .twitter-correct .twitter-incorrect").removeClass("answered answeredSelection twitter-correct twitter-incorrect");
+            $(".answered, .answeredSelection, .twitter-correct, .twitter-incorrect").removeClass("answered answeredSelection twitter-correct twitter-incorrect");
 
             refreshLeaderboards();
         }
