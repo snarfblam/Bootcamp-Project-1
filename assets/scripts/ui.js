@@ -10,10 +10,10 @@
             $("#answer-name-1").text(q.option2.name);
             $("#answer-name-2").text(q.option3.name);
             $("#answer-name-3").text(q.option4.name);
-            $("#answer-handle-0").text(q.option1.username);
-            $("#answer-handle-1").text(q.option2.username);
-            $("#answer-handle-2").text(q.option3.username);
-            $("#answer-handle-3").text(q.option4.username);
+            $("#answer-handle-0").text("@" + q.option1.username);
+            $("#answer-handle-1").text("@" + q.option2.username);
+            $("#answer-handle-2").text("@" + q.option3.username);
+            $("#answer-handle-3").text("@" + q.option4.username);
 
             var pDiv = $("#playerlist");
             pDiv.empty();
@@ -67,5 +67,9 @@
                     $(this).addClass("answeredSelection");
                     $(".answer").addClass("answered");
                 }
+            });
+
+            $(".profimg").error(function() {
+                $(this).attr("src", "assets/images/sillhouette.gif");
             });
         });
