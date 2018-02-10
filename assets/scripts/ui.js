@@ -1,7 +1,12 @@
 var myGuess = null;
 
+  function beforeRoundBegin() {
+      $(".spinner-box").show();
+  }
+
   function roundBegin() {
-            myGuess = null;
+      $(".spinner-box").hide();
+      myGuess = null;
 
             var q = getCurrentQuestion();
             $("#twitterQuote").text("❝" + q.question + "❞");

@@ -12,6 +12,14 @@ hr {
     width: 60%;
 }
 
+.spinner-box{
+	text-align: center;
+}
+.spinner {
+	height: 50px;
+	width: auto;
+	margin: 0 auto;
+}
 .list-header {
 	font-weight: bold;
 	color: rgb(15, 70, 88);

@@ -1021,6 +1021,9 @@ function TwoteClient(dbComm) {
     }
 }
 { // Message handlers
+    TwoteClient.prototype.evt_readyToBegin = function (args) {
+        this.ui_readyToBegin();
+    }
     TwoteClient.prototype.evt_userLeft = function (args) {
         var id = args.user || "unknown user";
         var reason = args.reason || "unknown reason";
@@ -1102,6 +1105,11 @@ function TwoteClient(dbComm) {
     }
 }
 { // UI component wrappers
+    TwoteClient.prototype.ui_readyToBegin = function() {
+        if(window.beforeRoundBegin) {
+            beforeRoundBegin();
+        }
+    }
     TwoteClient.prototype.ui_userKicked = function (userID, reason) {
         if (window.userKicked) {
             userKicked(userID, reason);
