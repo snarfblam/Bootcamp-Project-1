@@ -27,6 +27,8 @@
             });
 
             $(".answered, .answeredSelection").removeClass("answered answeredSelection");
+
+            refreshLeaderboards();
         }
 
         function roundEnd(answer) {
