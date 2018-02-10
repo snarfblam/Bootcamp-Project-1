@@ -161,9 +161,10 @@ function OAuthUtility() {
         });
     };
     OAuthUtility.prototype.signInWithRedirect = function () {
+        var self = this;
         firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
             .then(function () {
-                firebase.auth().signInWithRedirect(this.provider);
+                firebase.auth().signInWithRedirect(self.provider);
             });
     }
 }
