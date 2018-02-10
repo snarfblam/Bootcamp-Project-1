@@ -28,14 +28,7 @@ hr {
 .twitter-handle {
 	font-weight: bold;
 }
-.twitter-correct {
-	background: #d7ffd7;
-    outline: green solid 1px;
-}
-.twitter-incorrect {
-	background: #ffd7d7;
-    outline: rgb(128, 0, 0) solid 1px;
-}
+
 
 .player-collection ol,
 .player-collection ul {
@@ -111,7 +104,16 @@ hr {
 .incorrect-answer {
 	color: darkred;
 }
-
+.twitter-correct,
+.twitter-correct:hover {
+	background: #d7ffd7;
+    outline: green solid 1px;
+}
+.twitter-incorrect,
+.twitter-incorrect:hover {
+	background: #ffd7d7;
+    outline: rgb(128, 0, 0) solid 1px;
+}
 .kicked {
 	color:red;
 	text-decoration: red line-through;
