@@ -23,7 +23,8 @@
 }
 
 .marker {
-	width: 16px;
+	width: 24px;
+	float: left;
 }
 
 .answer {
