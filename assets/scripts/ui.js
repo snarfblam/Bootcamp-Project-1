@@ -92,6 +92,9 @@ var myGuess = null;
 
             $(".log-out-link").on("click", function(evt) {
                 evt.preventDefault();
-                firebase.auth().signOut();
+                firebase.auth().signOut().then(function(){
+                    var provider = new firebase.auth.GoogleAuthProvider();
+                    firebase.auth().signInWithRedirect(provider);
+                });
             });
         });
