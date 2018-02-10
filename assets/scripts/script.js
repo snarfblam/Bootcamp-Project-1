@@ -603,7 +603,7 @@ function TwoteHost(dbComm) {
         this.dbComm.nodes.ping.set(null);
         this.dbComm.nodes.pong.set(null);
         this.dbComm.nodes.events.set(null);
-        this.dbComm.nodes.events.set(null);
+        this.dbComm.nodes.requests.set(null);
 
         this.state = TwoteHost.states.waiting;
         this.pingAllUsers();
