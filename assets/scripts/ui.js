@@ -37,18 +37,20 @@
                 var $this = $(this);
                 var guess = parseInt($this.attr("data-guess"));
                 var correct = guess == answer;
-
-                if(correct) {
-                    $this.find(".marker").text("✔");
-                    $this.addClass("correct-answer");
-                } else {
-                    $this.find(".marker").text("✘");
-                    $this.addClass("incorrect-answer");
+                var kicked = $this.find(".name").hasClass("kicked");
+                if(!kicked) {
+                    if(correct) {
+                        $this.find(".marker").text("✔");
+                        $this.addClass("correct-answer");
+                    } else {
+                        $this.find(".marker").text("✘");
+                        $this.addClass("incorrect-answer");
+                    }
                 }
             });
         }
         function userMadeGuess(userID, guess) {
-            $("#" + userID).find(".marker").text("•");
+            $("#" + userID).find(".marker").text("⚪");
             $("#" + userID).addClass("guess-in").attr("data-guess", guess);
         }
         function userKicked(userID, reason) {
