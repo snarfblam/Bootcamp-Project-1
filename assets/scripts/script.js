@@ -3,7 +3,7 @@ var debugOptions = {
     allowDebugUser: true,
 };
 var twoteConfig = {
-    hiotPingNext: 8,
+    hostPingNext: 8,
     hostPingTimeout: 4, // seconds
     userPingNext: 10, // seconds
     userPingTimeout: 5, // seconds
@@ -362,6 +362,9 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
 
             if (userList.length == 1) {
                 // nobody else here... clean up and go home.
+                this.nodes.allPlayers.set(null);
+                this.nodes.activePlayers.set(null);
+
                 this.nodes.host.set(null);
                 this.nodes.ping.set(null);
                 this.nodes.pong.set(null);

@@ -45,7 +45,10 @@
             $(document.body).on("click", ".answer", function() {
                 var guess = parseInt($(this).attr("data-answer-index"));
                 userGuessed(guess);
-                $(this).addClass("answeredSelection");
-                $(".answer").addClass("answered");
+                // don't allow more than one answer to be visually selected
+                if($(".answeredSelection").length == 0) {
+                    $(this).addClass("answeredSelection");
+                    $(".answer").addClass("answered");
+                }
             });
         });
