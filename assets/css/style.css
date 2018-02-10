@@ -11,7 +11,10 @@ hr {
     background: rgba(0,0,0, 0.2);
     width: 60%;
 }
-
+.log-out-link {
+	color: rgb(149, 175, 184);
+	text-decoration: underline;
+}
 .spinner-box{
 	text-align: center;
 }
@@ -29,7 +32,7 @@ hr {
 }
 .blue-box {
 	box-shadow: 0px 0px 2px 2px#90CAF9;
-    margin-right: 10px;
+    margin: 10px;
 }
 .twote-logo {
 	height: 35px;
