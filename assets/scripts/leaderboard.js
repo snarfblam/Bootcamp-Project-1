@@ -79,6 +79,7 @@ function leaderboardPushToday(userID,wins,losses, username){
 
 function dispLeaderboardAlltime(leaderboardO){
 	var alltime = $("#leaderboard-alltime");
+	alltime.empty();
 	var leaderboard = leaderboardO.reverse();
 	for (var i=0;i<leaderboard.length;i++){
 		console.log(i)
@@ -88,6 +89,7 @@ function dispLeaderboardAlltime(leaderboardO){
 
 function dispLeaderboardToday(leaderboardO){
 	var alltime = $("#leaderboard-daily");
+	alltime.empty();
 	var leaderboard = leaderboardO.reverse();
 	for (var i=0;i<leaderboard.length;i++){
 		console.log(i)
@@ -126,6 +128,8 @@ function getUserToday(userID){
 		return userAllTime;
 	})
 }
+
+function refreshLeaderboards() {
 leaderboardPull().then(function(leaderboard){
 	console.log(leaderboard)
 	dispLeaderboardAlltime(leaderboard)
@@ -134,3 +138,6 @@ leaderboardDatePull(dateStr).then(function(leaderboard){
 	console.log(leaderboard)
 	dispLeaderboardToday(leaderboard)
 });
+}
+
+refreshLeaderboards();

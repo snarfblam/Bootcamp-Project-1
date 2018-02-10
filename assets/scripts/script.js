@@ -3,9 +3,11 @@ var debugOptions = {
     allowDebugUser: true,
 };
 var twoteConfig = {
-    hostPingTimeout: 10, // seconds
-    userPingTimeout: 10, // seconds
-    hostPremptivePing: 8, // seconds
+    hostPingNext: 8,
+    hostPingTimeout: 4, // seconds
+    userPingNext: 10, // seconds
+    userPingTimeout: 5, // seconds
+    hostPremptivePing: 6, // seconds
     timeBetweenQuestions: 6, // seconds
 };
 
@@ -317,6 +319,15 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
         });
     }
 
+    DbCommunicator.prototype.disconnect = function () {
+        if (this.host.connected)
+            this.host.disconnect();
+        if (this.client.connected)
+            this.client.disconnect();
+
+        this.nodes = {}; // make sure we send no out-going messages
+    }
+
     /** Asserts this player as the host of the room. Used when the previous host times out. */
     DbCommunicator.prototype.usurpRoom = function () {
         // There should probably be something involving a transaction here to avoid a race condition
@@ -351,6 +362,9 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
 
             if (userList.length == 1) {
                 // nobody else here... clean up and go home.
+                this.nodes.allPlayers.set(null);
+                this.nodes.activePlayers.set(null);
+
                 this.nodes.host.set(null);
                 this.nodes.ping.set(null);
                 this.nodes.pong.set(null);
@@ -482,7 +496,7 @@ function TwoteHost(dbComm) {
 
     this.pingList = []; // UserIDs
     this.userPingTime = 0;
-    this.userPingNext = twoteConfig.userPingTimeout;
+    this.userPingNext = twoteConfig.userPingNext;
     this.preemtivePongTime = twoteConfig.hostPremptivePing;
 
     this.currentTweet = "";
@@ -551,6 +565,8 @@ function TwoteHost(dbComm) {
         Dic.forEachKey(this.requestHandlers, function (key) {
             Dic.remove(self.requestHandlers, key);
         });
+
+        firebase.database().goOffline();
     }
 
     TwoteHost.prototype.initTwitter = function () {
@@ -586,6 +602,8 @@ function TwoteHost(dbComm) {
         this.dbComm.nodes.activePlayers.set(this.dbComm.cached.allPlayers);
         this.dbComm.nodes.ping.set(null);
         this.dbComm.nodes.pong.set(null);
+        this.dbComm.nodes.events.set(null);
+        this.dbComm.nodes.requests.set(null);
 
         this.state = TwoteHost.states.waiting;
         this.pingAllUsers();
@@ -688,10 +706,12 @@ function TwoteHost(dbComm) {
                         leaderboardObject.losses++;
                     }
 
-                    leaderboardPush(userID,
-                        leaderboardObject.wins,
-                        leaderboardObject.losses,
-                        leaderboardObject.username);
+                    if (!leaderboardObject.username.startsWith("testUser_")) {
+                        leaderboardPush(userID,
+                            leaderboardObject.wins,
+                            leaderboardObject.losses,
+                            leaderboardObject.username);
+                    }
                 });
 
                 getUserToday(userID).then(function (leaderboardObject) {
@@ -706,10 +726,12 @@ function TwoteHost(dbComm) {
                         leaderboardObject.losses++;
                     }
 
-                    leaderboardPushToday(userID,
-                        leaderboardObject.wins,
-                        leaderboardObject.losses,
-                        leaderboardObject.username);
+                    if (!leaderboardObject.username.startsWith("testUser_")) {
+                        leaderboardPushToday(userID,
+                            leaderboardObject.wins,
+                            leaderboardObject.losses,
+                            leaderboardObject.username);
+                    }
                 });
             }
         });
@@ -723,12 +745,16 @@ function TwoteHost(dbComm) {
         var guess = args.guess || 1;
         if (typeof guess == "string") guess = parseInt(guess);
 
-        this.guesses[userID] = guess;
+        var hasGuessed = userID in this.guesses;
 
-        // echo to clients
-        this.dbComm.sendEvent(twoteMessages.guessMade, args);
+        if (!hasGuessed) {
+            this.guesses[userID] = guess;
 
-        this.checkIfAllGuessesIn();
+            // echo to clients
+            this.dbComm.sendEvent(twoteMessages.guessMade, args);
+
+            this.checkIfAllGuessesIn();
+        }
     }
 
 
@@ -837,7 +863,7 @@ function TwoteHost(dbComm) {
     }
 
     TwoteHost.prototype.handleAllPlayersPonged = function () {
-        this.userPingNext = twoteConfig.userPingTimeout;
+        this.userPingNext = twoteConfig.userPingNext;
         this.userPingTime = 0;
 
         if (this.state == TwoteHost.states.waiting) {
@@ -873,7 +899,7 @@ function TwoteClient(dbComm) {
     this.dbComm = dbComm;
     this.connected = false;
     this.hostPingTime = 0;
-    this.hostPingNext = twoteConfig.hostPingTimeout;
+    this.hostPingNext = twoteConfig.hostPingNext;
     this.currentTweet = "";
     this.currentOptions = ["", "", "", "",];
 
@@ -966,7 +992,7 @@ function TwoteClient(dbComm) {
 
         if (data.from == this.dbComm.cached.host) {
             this.hostPingTime = 0;
-            this.hostPingNext = twoteConfig.hostPingTimeout;
+            this.hostPingNext = twoteConfig.hostPingNext;
         }
     }
 
@@ -995,10 +1021,48 @@ function TwoteClient(dbComm) {
     }
 }
 { // Message handlers
+    TwoteClient.prototype.evt_readyToBegin = function (args) {
+        this.ui_readyToBegin();
+    }
     TwoteClient.prototype.evt_userLeft = function (args) {
         var id = args.user || "unknown user";
         var reason = args.reason || "unknown reason";
         this.ui_userKicked(id, reason);
+
+        // If this client has been kicked, disconnect and inform user
+        if (id == this.dbComm.userID) {
+            var kickMessage = $("<div>");
+            kickMessage.text("You've been kicked. Reload the page to re-join the game.");
+            kickMessage.css({
+                position: "fixed", top: "25%",
+                height: "50%", width: "50%",
+                left: "25%", background: "red",
+                color: "white", textAlign: "center",
+                paddingTop: "1em", border: "1px black solid",
+                fontSize: "2rem",
+            });
+            $(document.body).append(kickMessage);
+            kickMessage.on("click", function () {
+                kickMessage.remove();
+            });
+
+            this.dbComm.disconnect();
+        }
+    }
+    /** Disconnects the client. This is not the same as "parting" -- the server will not be informed
+     * the player is leaving. The client will simply stop responding to game events.
+     */
+    TwoteClient.prototype.disconnect = function () {
+        this.connected = false;
+
+        // unwire request/event handlers
+        var self = this;
+        Dic.forEachKey(this.eventHandlers, function (key) {
+            Dic.remove(self.eventHandlers, key);
+        });
+        Dic.forEachKey(this.requestHandlers, function (key) {
+            Dic.remove(self.requestHandlers, key);
+        });
     }
     TwoteClient.prototype.evt_readyToBegin = function (args) {
         // Do nothing? we haven't established a ui function to notify users
@@ -1041,6 +1105,11 @@ function TwoteClient(dbComm) {
     }
 }
 { // UI component wrappers
+    TwoteClient.prototype.ui_readyToBegin = function() {
+        if(window.beforeRoundBegin) {
+            beforeRoundBegin();
+        }
+    }
     TwoteClient.prototype.ui_userKicked = function (userID, reason) {
         if (window.userKicked) {
             userKicked(userID, reason);

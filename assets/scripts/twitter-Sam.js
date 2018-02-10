@@ -1,4 +1,18 @@
-var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13", "TheEllenShow", "Oprah", "KingJames", "TBrady14", "KyrieIrving", "Pontifex", "ElonMusk"]
+var tweeters = [
+	"realDonaldTrump", 
+	"BarackObama", 
+	"Beyonce", 
+	"TaylorSwift13", 
+	"TheEllenShow", 
+	"Oprah", 
+	"KingJames", 
+	// "TBrady14", 
+	"BillGates",
+	"KyrieIrving", 
+	"Pontifex", 
+	"ElonMusk",
+	"ladygaga",
+]
 
 function twitterResFix(url){
 	return url.slice(0,-11)+url.slice(-4)
@@ -103,26 +117,26 @@ function dispOptions(ops){
 		setter(user,3)
 	})
 }
-var ops = getOptions()
-var index = Math.floor(Math.random()*10);
-console.log(index);
-getTweet(ops[Math.floor(Math.random()*4)],10).then(function(data){
-	console.log(data[index])
-	user = getUserData(data[index]);
-	return user
-	}).then(function(user){
-		$("#twitterQuote").html('"'+user.text+'"')
-	})
-function setter(user,i){
-	$("#profilepic"+i).attr("src",twitterResFix(user.avatar));
-	$("#answer-name-"+i).text(user.name);
-	$("#answer-handle-"+i).text("@"+user.username);
-}
-dispOptions(ops)
+// var ops = getOptions()
+// var index = Math.floor(Math.random()*10);
+// console.log(index);
+// getTweet(ops[Math.floor(Math.random()*4)],10).then(function(data){
+// 	console.log(data[index])
+// 	user = getUserData(data[index]);
+// 	return user
+// 	}).then(function(user){
+// 		$("#twitterQuote").html('"'+user.text+'"')
+// 	})
+// function setter(user,i){
+// 	$("#profilepic"+i).attr("src",twitterResFix(user.avatar));
+// 	$("#answer-name-"+i).text(user.name);
+// 	$("#answer-handle-"+i).text("@"+user.username);
+// }
+// dispOptions(ops)
 
-function showPlayers(playersArray){
-	var playerlist = $("#playerlist")
-	for (var i=0;i<players.length;i++){
-		playerlist.append("<li>").text(playersArray[i].name)
-	}
-}
+// function showPlayers(playersArray){
+// 	var playerlist = $("#playerlist")
+// 	for (var i=0;i<players.length;i++){
+// 		playerlist.append("<li>").text(playersArray[i].name)
+// 	}
+// }
