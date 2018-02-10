@@ -94,6 +94,7 @@ var myGuess = null;
                 evt.preventDefault();
                 firebase.auth().signOut().then(function(){
                     var provider = new firebase.auth.GoogleAuthProvider();
+                    localStorage.clear();
                     firebase.auth().signInWithRedirect(provider);
                 });
             });
