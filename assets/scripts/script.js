@@ -602,6 +602,8 @@ function TwoteHost(dbComm) {
         this.dbComm.nodes.activePlayers.set(this.dbComm.cached.allPlayers);
         this.dbComm.nodes.ping.set(null);
         this.dbComm.nodes.pong.set(null);
+        this.dbComm.nodes.events.set(null);
+        this.dbComm.nodes.events.requests(null);
 
         this.state = TwoteHost.states.waiting;
         this.pingAllUsers();
