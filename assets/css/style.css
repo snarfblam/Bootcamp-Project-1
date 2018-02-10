@@ -27,7 +27,10 @@ hr {
 	background: rgba(0,0,0,.1);
 	margin: 1em 0 0 0;
 }
-
+.blue-box {
+	box-shadow: 0px 0px 2px 2px#90CAF9;
+    margin-right: 10px;
+}
 .twote-logo {
 	height: 35px;
     width: auto;
