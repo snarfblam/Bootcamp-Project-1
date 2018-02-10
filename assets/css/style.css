@@ -133,3 +133,9 @@ hr {
 	text-decoration: red line-through;
 }
 
+footer{
+	position: absolute;
+	bottom: 0px 0px;
+	font-weight: thin;
+	font-size: 10px;
+}

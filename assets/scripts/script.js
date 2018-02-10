@@ -1116,7 +1116,10 @@ function TwoteClient(dbComm) {
         }
     }
     TwoteClient.prototype.ui_roundBegin = function () {
-        if (window.roundBegin) roundBegin();
+        if (window.roundBegin) {
+            $("#gifDiv").empty();
+            roundBegin();
+        }
     }
     TwoteClient.prototype.ui_userMadeGuess = function (id, guess) {
         if (window.userMadeGuess) {
@@ -1125,6 +1128,7 @@ function TwoteClient(dbComm) {
     }
     TwoteClient.prototype.ui_roundEnd = function (answerNum) {
         if (window.roundEnd) {
+            displayGif($("#answer-name-"+answerNum).text());
             roundEnd(answerNum);
         }
     }
@@ -1233,7 +1237,7 @@ $(document).ready(function () {
     });
 });
 
-var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13", "TheEllenShow", "Oprah", "KingJames", "TBrady14", "KyrieIrving", "Pontifex", "ElonMusk"]
+var tweeters = ["realDonaldTrump", "BarackObama", "Beyonce", "TaylorSwift13", "TheEllenShow", "Oprah", "KingJames", "KyrieIrving", "Pontifex", "ElonMusk", "JeffBezos", "StephenAtHome", "ConanOBrien", "BillNye", "BillGates", "katyperry","neiltyson", "HamillHimself"]
 
 function getTweeterData() {
     var reader = new TwitterReader();
@@ -1256,4 +1260,17 @@ function getTweeterData() {
     //     profImg: tweetObj.profileImage,
     //     handle: tweetObj.username
     // }
+}
+function displayGif(data){
+    var gifDiv=$("#gifDiv");
+    var queryURL="https://api.giphy.com/v1/gifs/search?q=" + encodeURI(data) + "&api_key=dc6zaTOxFJmzC&limit=1&rating=pg";
+    $.ajax({
+        url:queryURL,
+        method: "GET"
+    })
+    .then(function(response){
+        var results = response.data;
+        var img = $("<img>").attr("src",results[0].images.fixed_height.url).attr("height","200");
+        gifDiv.append(img);
+    })
 }
