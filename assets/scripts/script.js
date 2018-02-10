@@ -161,7 +161,10 @@ function OAuthUtility() {
         });
     };
     OAuthUtility.prototype.signInWithRedirect = function () {
-        firebase.auth().signInWithRedirect(this.provider);
+        firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
+            .then(function () {
+                firebase.auth().signInWithRedirect(this.provider);
+            });
     }
 }
 
@@ -1105,8 +1108,8 @@ function TwoteClient(dbComm) {
     }
 }
 { // UI component wrappers
-    TwoteClient.prototype.ui_readyToBegin = function() {
-        if(window.beforeRoundBegin) {
+    TwoteClient.prototype.ui_readyToBegin = function () {
+        if (window.beforeRoundBegin) {
             beforeRoundBegin();
         }
     }
