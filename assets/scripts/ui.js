@@ -2,7 +2,7 @@ var myGuess = 0;
 
   function roundBegin() {
             var q = getCurrentQuestion();
-            $("#twitterQuote").text(q.question);
+            $("#twitterQuote").text("❝" + q.question + "❞");
             $("#profilepic0").attr("src" , q.option1.avatar);
             $("#profilepic1").attr("src" , q.option2.avatar);
             $("#profilepic2").attr("src" , q.option3.avatar);
@@ -82,7 +82,4 @@ var myGuess = 0;
                 }
             });
 
-            $(".profimg").error(function() {
-                $(this).attr("src", "assets/images/sillhouette.gif");
-            });
         });
