@@ -319,12 +319,12 @@ function DbCommunicator(autoAuth, autoconnect, roomName) {
         });
     }
 
-    DbCommunicator.prototype.disconnect = function() {
-        if(this.host.connected)
+    DbCommunicator.prototype.disconnect = function () {
+        if (this.host.connected)
             this.host.disconnect();
-        if(this.client.connected)
+        if (this.client.connected)
             this.client.disconnect();
-        
+
         this.nodes = {}; // make sure we send no out-going messages
     }
 
@@ -701,10 +701,12 @@ function TwoteHost(dbComm) {
                         leaderboardObject.losses++;
                     }
 
-                    leaderboardPush(userID,
-                        leaderboardObject.wins,
-                        leaderboardObject.losses,
-                        leaderboardObject.username);
+                    if (!leaderboardObject.username.startsWith("testUser_")) {
+                        leaderboardPush(userID,
+                            leaderboardObject.wins,
+                            leaderboardObject.losses,
+                            leaderboardObject.username);
+                    }
                 });
 
                 getUserToday(userID).then(function (leaderboardObject) {
@@ -719,10 +721,12 @@ function TwoteHost(dbComm) {
                         leaderboardObject.losses++;
                     }
 
-                    leaderboardPushToday(userID,
-                        leaderboardObject.wins,
-                        leaderboardObject.losses,
-                        leaderboardObject.username);
+                    if (!leaderboardObject.username.startsWith("testUser_")) {
+                        leaderboardPushToday(userID,
+                            leaderboardObject.wins,
+                            leaderboardObject.losses,
+                            leaderboardObject.username);
+                    }
                 });
             }
         });
@@ -1036,7 +1040,7 @@ function TwoteClient(dbComm) {
     /** Disconnects the client. This is not the same as "parting" -- the server will not be informed
      * the player is leaving. The client will simply stop responding to game events.
      */
-    TwoteClient.prototype.disconnect = function() {
+    TwoteClient.prototype.disconnect = function () {
         this.connected = false;
 
         // unwire request/event handlers
