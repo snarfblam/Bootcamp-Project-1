@@ -1,6 +1,8 @@
-var myGuess = 0;
+var myGuess = null;
 
   function roundBegin() {
+            myGuess = null;
+
             var q = getCurrentQuestion();
             $("#twitterQuote").text("❝" + q.question + "❞");
             $("#profilepic0").attr("src" , q.option1.avatar);
@@ -72,13 +74,14 @@ var myGuess = 0;
         $(document).ready(function () {
             $(document.body).on("click", ".answer", function() {
                 var guess = parseInt($(this).attr("data-answer-index"));
+
+                myGuess = myGuess || guess;
                 userGuessed(guess);
                 // don't allow more than one answer to be visually selected
                 if($(".answeredSelection").length == 0) {
                     $(this).addClass("answeredSelection");
                     $(".answer").addClass("answered");
-                    
-                    myGuess = guess;
+
                 }
             });
 
