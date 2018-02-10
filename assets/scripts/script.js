@@ -1272,5 +1272,6 @@ function displayGif(data){
         var results = response.data;
         var img = $("<img>").attr("src",results[0].images.fixed_height.url).attr("height","200");
         gifDiv.append(img);
+        console.log(results[0].images.fixed_height.url)
     })
 }
