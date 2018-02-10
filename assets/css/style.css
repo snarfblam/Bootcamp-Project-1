@@ -5,6 +5,30 @@
 }
 */
 
+hr {
+	height: 2px;
+    border: none;
+    background: rgba(0,0,0, 0.2);
+    width: 60%;
+}
+
+.list-header {
+	font-weight: bold;
+	color: rgb(15, 70, 88);
+	text-align: center;
+	background: rgba(0,0,0,.1);
+	margin: 1em 0 0 0;
+}
+
+.twote-logo {
+	height: 35px;
+    width: auto;
+    vertical-align: text-bottom;
+}
+.player-collection ol,
+.player-collection ul {
+	margin-bottom: 2em;
+}
 
 #twitterQuote{
 	font-size: 24px;
@@ -79,3 +103,4 @@
 	color:red;
 	text-decoration: red line-through;
 }
+
