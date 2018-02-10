@@ -1,18 +1,21 @@
-var tweeters = [
-	"realDonaldTrump", 
-	"BarackObama", 
-	"Beyonce", 
-	"TaylorSwift13", 
-	"TheEllenShow", 
-	"Oprah", 
-	"KingJames", 
-	// "TBrady14", 
-	"BillGates",
-	"KyrieIrving", 
-	"Pontifex", 
-	"ElonMusk",
-	"ladygaga",
-]
+var tweeters = ["realDonaldTrump",
+"BarackObama",
+ "Beyonce", 
+ "TaylorSwift13",
+ "TheEllenShow",
+ "Oprah", 
+ "KingJames", 
+ "KyrieIrving", 
+ "Pontifex", 
+ "ElonMusk", 
+ "JeffBezos", 
+ "StephenAtHome", 
+ "ConanOBrien", 
+ "BillNye", 
+ "BillGates", 
+ "katyperry",
+ "neiltyson", 
+ "HamillHimself"]
 
 function twitterResFix(url){
 	return url.slice(0,-11)+url.slice(-4)
