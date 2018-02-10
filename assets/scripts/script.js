@@ -1267,16 +1267,15 @@ function getTweeterData() {
 }
 function displayGif(data){
     var gifDiv=$("#gifDiv");
-    var queryURL="https://api.giphy.com/v1/gifs/search?q=" + encodeURI(data) + "&api_key=dc6zaTOxFJmzC&limit=1&rating=pg";
+    var queryURL="https://api.giphy.com/v1/gifs/search?q=" + encodeURI(data) + "&api_key=dc6zaTOxFJmzC&limit=10&rating=pg";
     $.ajax({
         url:queryURL,
         method: "GET"
     })
     .then(function(response){
         var results = response.data;
-        console.log(results)
-        var img = $("<img>").attr("src",results[0].images.fixed_height.url).attr("height","200");
+        var random = Math.floor(Math.random()*results.length)
+        var img = $("<img>").attr("src",results[random].images.fixed_height.url).attr("height","200");
         gifDiv.append(img);
-        console.log(results[0].images.fixed_height.url)
     })
 }
