@@ -1132,7 +1132,7 @@ function TwoteClient(dbComm) {
     }
     TwoteClient.prototype.ui_roundEnd = function (answerNum) {
         if (window.roundEnd) {
-            displayGif($("#answer-name-"+answerNum).text());
+            displayGif($("#answer-name-"+(answerNum-1)).text());
             roundEnd(answerNum);
         }
     }
