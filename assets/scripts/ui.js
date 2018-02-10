@@ -6,14 +6,14 @@
             $("#profilepic1").attr("src" , q.option2.avatar);
             $("#profilepic2").attr("src" , q.option3.avatar);
             $("#profilepic3").attr("src" , q.option4.avatar);
-            $("#answer-name-0").attr("src" , q.option1.name);
-            $("#answer-name-1").attr("src" , q.option2.name);
-            $("#answer-name-2").attr("src" , q.option3.name);
-            $("#answer-name-3").attr("src" , q.option4.name);
-            $("#answer-handle-0").attr("src" , q.option1.username);
-            $("#answer-handle-1").attr("src" , q.option2.username);
-            $("#answer-handle-2").attr("src" , q.option3.username);
-            $("#answer-handle-3").attr("src" , q.option4.username);
+            $("#answer-name-0").text(q.option1.name);
+            $("#answer-name-1").text(q.option2.name);
+            $("#answer-name-2").text(q.option3.name);
+            $("#answer-name-3").text(q.option4.name);
+            $("#answer-handle-0").text(q.option1.username);
+            $("#answer-handle-1").text(q.option2.username);
+            $("#answer-handle-2").text(q.option3.username);
+            $("#answer-handle-3").text(q.option4.username);
 
             var pDiv = $("#playerlist");
             pDiv.empty();
