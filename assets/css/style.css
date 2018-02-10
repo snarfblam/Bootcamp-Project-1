@@ -21,3 +21,16 @@
 	font-weight: 200;
 	font-size: 100px;
 }
+
+.marker {
+	width: 16px;
+}
+
+.answer {
+	cursor: pointer;
+}
+
+.answer:hover {
+	background: rgb(224, 237, 241);
+	outline: lightblue 1px solid;
+}
