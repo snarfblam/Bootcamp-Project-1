@@ -1275,7 +1275,7 @@ function displayGif(data){
     .then(function(response){
         var results = response.data;
         var random = Math.floor(Math.random()*results.length)
-        var img = $("<img>").attr("src",results[random].images.fixed_height.url).attr("height","200").addClass("responsive-img z-depth-1");
+        var img = $("<img>").attr("src",results[random].images.fixed_height.url).attr("height","200").addClass("responsive-img center-align z-depth-1");
         gifDiv.append(img);
     })
 }
