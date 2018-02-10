@@ -19,9 +19,10 @@
             pDiv.empty();
             var p = getActivePlayers();
             p.forEach(function (player) {
-                var box = $("<p><span class='marker'></span> <span class='name'></span></p>");
+                var box = $("<p><span class='marker'>&nbsp;</span> <span class='name'></span></p>");
                 box.find(".name").text(player.displayName);
                 box.attr("id", player.userID);
+                box.addClass("playerItem");
                 pDiv.append(box);
             });
 
@@ -31,13 +32,27 @@
         function roundEnd(answer) {
             var elem = $("#q" + answer);
             elem.text(elem.text() + " <--");
+
+            $(".playerItem").each(function(){
+                var $this = $(this);
+                var guess = parseInt($this.attr("data-guess"));
+                var correct = guess == answer;
+
+                if(correct) {
+                    $this.find(".marker").text("✔");
+                    $this.addClass("correct-answer");
+                } else {
+                    $this.find(".marker").text("✘");
+                    $this.addClass("incorrect-answer");
+                }
+            });
         }
         function userMadeGuess(userID, guess) {
-            $("#" + userID).find(".marker").text("✔");
-            $("#" + userID).addClass("guess-in");
+            $("#" + userID).find(".marker").text("•");
+            $("#" + userID).addClass("guess-in").attr("data-guess", guess);
         }
         function userKicked(userID, reason) {
-            //$("#" + userID).find(".marker").text("✘");
+            //$("#" + userID).find(".marker").text("");
             $("#" + userID).find(".name").addClass("kicked");
 
         }

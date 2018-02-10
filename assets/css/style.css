@@ -67,6 +67,14 @@
 	color: darkgreen;
 }
 
+.correct-answer {
+	color: darkgreen;
+}
+
+.incorrect-answer {
+	color: darkred;
+}
+
 .kicked {
 	color:red;
 	text-decoration: red line-through;
