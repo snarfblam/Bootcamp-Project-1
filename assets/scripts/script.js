@@ -740,12 +740,16 @@ function TwoteHost(dbComm) {
         var guess = args.guess || 1;
         if (typeof guess == "string") guess = parseInt(guess);
 
-        this.guesses[userID] = guess;
+        var hasGuessed = userID in this.guesses;
 
-        // echo to clients
-        this.dbComm.sendEvent(twoteMessages.guessMade, args);
+        if (!hasGuessed) {
+            this.guesses[userID] = guess;
 
-        this.checkIfAllGuessesIn();
+            // echo to clients
+            this.dbComm.sendEvent(twoteMessages.guessMade, args);
+
+            this.checkIfAllGuessesIn();
+        }
     }
 
 
