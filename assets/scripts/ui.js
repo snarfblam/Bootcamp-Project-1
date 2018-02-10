@@ -24,20 +24,28 @@
                 box.attr("id", player.userID);
                 pDiv.append(box);
             });
+
+            $(".answered, .answeredSelection").removeClass("answered answeredSelection");
         }
-        function userMadeGuess(userID, guess) {
-            $("#" + userID).find(".marker").text(guess);
-        }
+
         function roundEnd(answer) {
             var elem = $("#q" + answer);
             elem.text(elem.text() + " <--");
         }
+        function userMadeGuess(userID, guess) {
+            $("#" + userID).find(".marker").text("✔");
+            $("#" + userID).addClass("guess-in");
+        }
         function userKicked(userID, reason) {
-            $("#" + userID).find(".marker").text("[X]");
+            //$("#" + userID).find(".marker").text("✘");
+            $("#" + userID).find(".name").addClass("kicked");
+
         }
         $(document).ready(function () {
             $(document.body).on("click", ".answer", function() {
-             var guess = parseInt($(this).attr("data-answer-index"));
+                var guess = parseInt($(this).attr("data-answer-index"));
                 userGuessed(guess);
+                $(this).addClass("answeredSelection");
+                $(".answer").addClass("answered");
             });
         });
