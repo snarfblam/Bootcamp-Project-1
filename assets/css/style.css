@@ -30,7 +30,43 @@
 	cursor: pointer;
 }
 
+.answered {
+	/* All answers after user made selection */
+	cursor: default;
+}
+
+.answeredSelection {
+	/* Selected answer */
+	outline: lightblue 1px solid;
+	font-weight: bold;
+	color: rgb(31, 87, 105);
+	background: rgb(224, 237, 241);
+}
+
 .answer:hover {
 	background: rgb(224, 237, 241);
 	outline: lightblue 1px solid;
+}
+
+.answered:hover {
+	background: inherit;
+	outline: inherit;
+}
+
+
+.answeredSelection:hover {
+	/* Selected answer */
+	outline: lightblue 1px solid;
+	font-weight: bold;
+	color: rgb(31, 87, 105);
+	background: rgb(224, 237, 241);
+}
+
+.guess-in {
+	color: darkgreen;
+}
+
+.kicked {
+	color:red;
+	text-decoration: red line-through;
 }
