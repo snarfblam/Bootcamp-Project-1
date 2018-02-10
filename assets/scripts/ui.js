@@ -1,3 +1,4 @@
+var myGuess = 0;
 
   function roundBegin() {
             var q = getCurrentQuestion();
@@ -26,7 +27,7 @@
                 pDiv.append(box);
             });
 
-            $(".answered, .answeredSelection").removeClass("answered answeredSelection");
+            $(".answered, .answeredSelection .twitter-correct .twitter-incorrect").removeClass("answered answeredSelection twitter-correct twitter-incorrect");
 
             refreshLeaderboards();
         }
@@ -50,6 +51,14 @@
                     }
                 }
             });
+
+            var playerIsRight = answer == myGuess;
+            if(playerIsRight) {
+                $("#answer" + (myGuess - 1)).addClass("twitter-correct");
+            } else {
+                $("#answer" + (answer - 1)).addClass("twitter-correct");
+                $("#answer" + (myGuess - 1)).addClass("twitter-incorrect");
+            }
         }
         function userMadeGuess(userID, guess) {
             $("#" + userID).find(".marker").text("⚪");
@@ -68,6 +77,8 @@
                 if($(".answeredSelection").length == 0) {
                     $(this).addClass("answeredSelection");
                     $(".answer").addClass("answered");
+                    
+                    myGuess = guess;
                 }
             });
 

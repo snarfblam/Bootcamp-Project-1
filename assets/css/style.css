@@ -25,6 +25,18 @@ hr {
     width: auto;
     vertical-align: text-bottom;
 }
+.twitter-handle {
+	font-weight: bold;
+}
+.twitter-correct {
+	background: #d7ffd7;
+    outline: green solid 1px;
+}
+.twitter-incorrect {
+	background: #ffd7d7;
+    outline: rgb(128, 0, 0) solid 1px;
+}
+
 .player-collection ol,
 .player-collection ul {
 	margin-bottom: 2em;
