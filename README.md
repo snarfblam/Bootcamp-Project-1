@@ -1,5 +1,7 @@
 # Who-Twote-It
 
+![Who Twote It?](twote.png)
+
 *Who Twote It* is a single-page web game where multiple users can try to guess which famous personality posted a particular tweet. There is a leaderboard to track users and each tweet is accompanied with a relevant animation from Giphy.
 
 *Who Twote It* uses Firebase to track users and leaderboards, and as a message relay service to allow multiple clients to interact. *Who Twote It* uses jQuery and the Materialize CSS framework.
