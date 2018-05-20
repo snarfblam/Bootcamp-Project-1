@@ -1,10 +1,12 @@
 # Who-Twote-It
 
-*Who Twote It* is a single-page web game where multiple users can try to guess which famous personality posted a particular tweet.
+*Who Twote It* is a single-page web game where multiple users can try to guess which famous personality posted a particular tweet. There is a leaderboard to track users and each tweet is accompanied with a relevant animation from Giphy.
 
-*Who Twote It* uses Firebase to track users and leaderboards, and abuses Firebase as a message relay service to allow multiple clients to interact.
+*Who Twote It* uses Firebase to track users and leaderboards, and as a message relay service to allow multiple clients to interact. *Who Twote It* uses jQuery and the Materialize CSS framework.
 
-## Code Documentation
+[Live Demo](https://snarfblam.github.io/Who-Twote-It/)
+
+## Message Relay Documentation
 
 ```How it works:
     DbCommunicator - The main thing. It connects to firebase and creates other objects.
